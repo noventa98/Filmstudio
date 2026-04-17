@@ -1055,14 +1055,17 @@ function importPlex(e){
 
 // ── PLEX DEEP LINKS ──
 function plexNavigate(rKey, title){
-  const webUrl=`https://app.plex.tv/desktop#!/server/${PLEX_MACHINE}/details?key=%2Flibrary%2Fmetadata%2F${rKey}`;
-  const plexUri=`plex://server/${PLEX_MACHINE}/com.plexapp.plugins.library/library/metadata/${rKey}`;
+  const metaPath=`/library/metadata/${rKey}`;
+  const webUrl=`https://app.plex.tv/desktop#!/server/${PLEX_MACHINE}/details?key=${encodeURIComponent(metaPath)}`;
   const ua=navigator.userAgent;
-  if(/Android/i.test(ua)){
-    window.location.href=`intent://server/${PLEX_MACHINE}/com.plexapp.plugins.library/library/metadata/${rKey}#Intent;scheme=plex;package=com.plexapp.android;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
-  } else if(/iPhone|iPad|iPod/i.test(ua)){
-    window.location.href=plexUri;
-    setTimeout(()=>{if(!document.hidden)window.open(webUrl,'_blank');},1500);
+  if(/Android|iPhone|iPad|iPod/i.test(ua)){
+    // Use web URL — Plex app registers as handler for app.plex.tv links
+    const a=document.createElement('a');
+    a.href=webUrl;
+    a.style.display='none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>document.body.removeChild(a),100);
   } else {
     window.open(webUrl,'_blank');
   }
@@ -1096,17 +1099,11 @@ async function openPlex(tNum){
       }
     }
   }catch(e){}
-  // 3. Fallback: no ratingKey available — try to open Plex app with search
+  // 3. Fallback: no ratingKey — open Plex web search
   if(btn){btn.textContent='No key — searching...';btn.disabled=false;}
   const fallbackUrl=`https://app.plex.tv/desktop#!/search?query=${encodeURIComponent(g.title)}`;
-  if(/Android/i.test(navigator.userAgent)){
-    window.location.href=`intent://app/search?query=${encodeURIComponent(g.title)}#Intent;scheme=plex;package=com.plexapp.android;S.browser_fallback_url=${encodeURIComponent(fallbackUrl)};end`;
-  } else if(/iPhone|iPad|iPod/i.test(navigator.userAgent)){
-    window.location.href='plex://';
-    setTimeout(()=>{if(!document.hidden)window.open(fallbackUrl,'_blank');},1500);
-  } else {
-    window.open(fallbackUrl,'_blank');
-  }
+  const a=document.createElement('a');a.href=fallbackUrl;a.style.display='none';
+  document.body.appendChild(a);a.click();setTimeout(()=>document.body.removeChild(a),100);
 }
 
 // ── EXTRAS ──
@@ -1295,7 +1292,7 @@ function fmtDate(d){
   const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
   const m=months[d.getMonth()];
   const mf=m.length>4?m.slice(0,3):m;
-  return`${day} ${mf} ${d.getFullYear()}`;
+  return`${day} ${mf} '${String(d.getFullYear()).slice(2)}`;
 }
 function x(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):''}
 function esc4(s){return s?String(s).replace(/'/g,'&#39;').replace(/"/g,'&quot;'):''}
