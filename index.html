@@ -1055,21 +1055,9 @@ function importPlex(e){
 
 // ── PLEX DEEP LINKS ──
 function plexNavigate(rKey, title){
-  const metaPath=`/library/metadata/${rKey}`;
-  const webUrl=`https://app.plex.tv/desktop#!/server/${PLEX_MACHINE}/details?key=${encodeURIComponent(metaPath)}`;
-  // watch.plex.tv is the domain the Plex app registers for on Android/iOS
-  const appUrl=`https://watch.plex.tv/#!/server/${PLEX_MACHINE}/details?key=${encodeURIComponent(metaPath)}`;
-  const ua=navigator.userAgent;
-  if(/Android|iPhone|iPad|iPod/i.test(ua)){
-    const a=document.createElement('a');
-    a.href=appUrl;
-    a.style.display='none';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(()=>document.body.removeChild(a),100);
-  } else {
-    window.open(webUrl,'_blank');
-  }
+  const metaKey=encodeURIComponent(`/library/metadata/${rKey}`);
+  const webUrl=`https://app.plex.tv/desktop#!/server/${PLEX_MACHINE}/details?key=${metaKey}`;
+  window.open(webUrl,'_blank');
 }
 async function openPlex(tNum){
   const g=catalog.find(g=>g.t===tNum);if(!g)return;
@@ -1101,10 +1089,8 @@ async function openPlex(tNum){
     }
   }catch(e){}
   // 3. Fallback: no ratingKey — open Plex web search
-  if(btn){btn.textContent='No key — searching...';btn.disabled=false;}
-  const fallbackUrl=`https://watch.plex.tv/#!/search?query=${encodeURIComponent(g.title)}`;
-  const a=document.createElement('a');a.href=fallbackUrl;a.style.display='none';
-  document.body.appendChild(a);a.click();setTimeout(()=>document.body.removeChild(a),100);
+  if(btn){btn.textContent='▶ Play on Plex';btn.disabled=false;}
+  window.open(`https://app.plex.tv/desktop#!/search?query=${encodeURIComponent(g.title)}`,'_blank');
 }
 
 // ── EXTRAS ──
