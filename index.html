@@ -1055,13 +1055,13 @@ function importPlex(e){
 
 // ── PLEX DEEP LINKS ──
 function plexNavigate(rKey, title){
-  const metaKey=`%2Flibrary%2Fmetadata%2F${rKey}`;
-  const webUrl=`https://app.plex.tv/desktop#!/server/${PLEX_MACHINE}/details?key=${metaKey}`;
+  const webUrl=`https://app.plex.tv/desktop#!/server/${PLEX_MACHINE}/details?key=%2Flibrary%2Fmetadata%2F${rKey}`;
+  const plexUri=`plex://server/${PLEX_MACHINE}/com.plexapp.plugins.library/library/metadata/${rKey}`;
   const ua=navigator.userAgent;
   if(/Android/i.test(ua)){
-    window.location.href=`intent://preplay/?metadataKey=${metaKey}&server=${PLEX_MACHINE}#Intent;scheme=plex;package=com.plexapp.android;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
+    window.location.href=`intent://server/${PLEX_MACHINE}/com.plexapp.plugins.library/library/metadata/${rKey}#Intent;scheme=plex;package=com.plexapp.android;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
   } else if(/iPhone|iPad|iPod/i.test(ua)){
-    window.location.href=`plex://preplay/?metadataKey=${metaKey}&server=${PLEX_MACHINE}`;
+    window.location.href=plexUri;
     setTimeout(()=>{if(!document.hidden)window.open(webUrl,'_blank');},1500);
   } else {
     window.open(webUrl,'_blank');
@@ -1074,8 +1074,9 @@ async function openPlex(tNum){
   // 1. Try cached ratingKey from last Plex sync (works from any network)
   const cached=plexWatched[String(tNum)];
   if(cached&&cached.ratingKey){
+    if(btn){btn.textContent='Opening...';}
     plexNavigate(cached.ratingKey, g.title);
-    if(btn){btn.textContent='▶ Play on Plex';btn.disabled=false;}
+    setTimeout(()=>{if(btn){btn.textContent='▶ Play on Plex';btn.disabled=false;}},2000);
     return;
   }
   // 2. Try live search on local Plex server (home WiFi only)
@@ -1095,8 +1096,8 @@ async function openPlex(tNum){
       }
     }
   }catch(e){}
-  // 3. Fallback: try to open Plex app, else web search
-  if(btn){btn.textContent='▶ Play on Plex';btn.disabled=false;}
+  // 3. Fallback: no ratingKey available — try to open Plex app with search
+  if(btn){btn.textContent='No key — searching...';btn.disabled=false;}
   const fallbackUrl=`https://app.plex.tv/desktop#!/search?query=${encodeURIComponent(g.title)}`;
   if(/Android/i.test(navigator.userAgent)){
     window.location.href=`intent://app/search?query=${encodeURIComponent(g.title)}#Intent;scheme=plex;package=com.plexapp.android;S.browser_fallback_url=${encodeURIComponent(fallbackUrl)};end`;
@@ -1145,9 +1146,11 @@ async function openM(g){
   const isOwner=!!GITHUB_TOKEN;
   const watchedBtnStyle=g.watched?'background:rgba(82,183,136,.18);border-color:var(--green);color:var(--green)':'background:var(--surf);border-color:var(--bdr2);color:var(--t2)';
   let watchedBtnH='';
-  const wExtra=g.watched?((g.date_watched?' · '+g.date_watched:'')+(g.my_rating?' · '+g.my_rating+'★':'')):'';
+  // Short date for mobile display (e.g. "12 Jan 2026" → "Jan 26")
+  const wDateShort=g.date_watched?g.date_watched.replace(/^\d+\s/,'').replace(/\s\d{2}(\d{2})$/," '$1"):'';
+  const wExtra=g.watched?((wDateShort?' · '+wDateShort:'')+(g.my_rating?' · '+g.my_rating+'★':'')):'';
   if(isOwner){
-    watchedBtnH='<button class="btn btn-watched" id="watched-btn-'+g.t+'" style="'+watchedBtnStyle+'" onclick="markWatched('+g.t+','+(g.watched?'false':'true')+')">'+(g.watched?'✓ Watched':'○ Mark as Watched')+'<span class="w-extra">'+wExtra+'</span></button>';
+    watchedBtnH='<button class="btn btn-watched" id="watched-btn-'+g.t+'" style="'+watchedBtnStyle+'" onclick="markWatched('+g.t+','+(g.watched?'false':'true')+')">'+(g.watched?'✓ Watched':'○ Watch')+'<span class="w-extra">'+wExtra+'</span></button>';
   } else if(g.watched){
     watchedBtnH='<span class="btn btn-watched" style="opacity:.6;cursor:default;'+watchedBtnStyle+'">✓ Watched<span class="w-extra">'+wExtra+'</span></span>';
   }
