@@ -815,7 +815,7 @@ async function syncPlexData(statusEl){
   for(const sec of sections){
     if(statusEl)statusEl.textContent='Loading '+sec.title+'...';
     try{
-      const r=await fetch(`${PLEX_LOCAL}/library/sections/${sec.key}/all?X-Plex-Token=${PLEX_TOKEN}`,{headers:{Accept:'application/json'}});
+      const r=await fetch(`${PLEX_LOCAL}/library/sections/${sec.key}/all?includeGuids=1&X-Plex-Token=${PLEX_TOKEN}`,{headers:{Accept:'application/json'}});
       if(r.ok){const d=await r.json();allFilms=allFilms.concat(d.MediaContainer.Metadata||[]);}
     }catch(e){console.warn('Section error:',sec.title,e.message);}
   }
