@@ -1057,7 +1057,17 @@ function importPlex(e){
 function plexNavigate(rKey, title){
   const metaKey=encodeURIComponent(`/library/metadata/${rKey}`);
   const webUrl=`https://app.plex.tv/desktop#!/server/${PLEX_MACHINE}/details?key=${metaKey}`;
-  window.open(webUrl,'_blank');
+  const ua=navigator.userAgent;
+  if(/Android/i.test(ua)){
+    // Try intent with plex:// scheme — encode server+key as path
+    const intentUrl=`intent://play/?machineIdentifier=${PLEX_MACHINE}&key=%2Flibrary%2Fmetadata%2F${rKey}#Intent;scheme=plex;package=com.plexapp.android;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
+    window.location.href=intentUrl;
+  } else if(/iPhone|iPad|iPod/i.test(ua)){
+    window.location.href=`plex://play/?machineIdentifier=${PLEX_MACHINE}&key=%2Flibrary%2Fmetadata%2F${rKey}`;
+    setTimeout(()=>{if(!document.hidden)window.open(webUrl,'_blank');},1500);
+  } else {
+    window.open(webUrl,'_blank');
+  }
 }
 async function openPlex(tNum){
   const g=catalog.find(g=>g.t===tNum);if(!g)return;
