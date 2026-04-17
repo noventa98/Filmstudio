@@ -154,6 +154,14 @@ aside::-webkit-scrollbar-thumb{background:var(--bdr2)}
 .m-badges{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
 .m-stars{display:flex;gap:2px;font-size:15px;margin-bottom:6px}
 .m-watched{font-size:12px;color:var(--green)}
+.m-watched-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px}
+.btn-watched{font-size:12px;padding:6px 14px;border-radius:20px;border-width:1.5px;border-style:solid;transition:all .2s}
+/* On desktop, hide hero watched button — show in actions row instead */
+.m-watched-btn-wrap{display:none}
+@media(max-width:768px){
+  .m-watched-btn-wrap{display:inline-flex}
+  .mact .btn-watched{display:none}
+}
 
 /* Modal body tabs */
 .mbody{padding:0}
@@ -194,6 +202,8 @@ aside::-webkit-scrollbar-thumb{background:var(--bdr2)}
 .crew-list{display:flex;flex-direction:column;gap:8px}
 .crew-row{display:flex;gap:12px;align-items:flex-start;padding:8px 12px;background:var(--surf);border:1.5px solid var(--bdr);border-radius:6px;cursor:pointer;transition:all .15s}
 .crew-row:hover{border-color:var(--gold);background:var(--gdim)}
+.crew-face{width:36px;height:36px;border-radius:50%;background:var(--bg3);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--t3);flex-shrink:0}
+.crew-face img{width:100%;height:100%;object-fit:cover}
 .crew-role{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);min-width:110px;flex-shrink:0;padding-top:2px;font-weight:600}
 .crew-name{font-size:13px;color:var(--text);font-weight:500}
 
@@ -977,13 +987,12 @@ async function markWatched(tNum, nowWatched){
 
   localStorage.setItem('plexWatched',JSON.stringify(plexWatched));
 
-  // Update button
-  const btn=document.getElementById('watched-btn-'+tNum);
-  if(btn){
-    btn.textContent=nowWatched?'✓ Watched':'○ Mark as Watched';
-    btn.style.cssText=nowWatched?'background:rgba(80,200,80,.15);border-color:#50c850;color:#50c850':'';
-    btn.onclick=()=>markWatched(tNum,!nowWatched);
-  }
+  // Update both hero and desktop watched buttons
+  const wStyle=nowWatched?'background:rgba(82,183,136,.18);border-color:var(--green);color:var(--green)':'background:var(--surf);border-color:var(--bdr2);color:var(--t2)';
+  ['watched-btn-'+tNum,'watched-btn-d-'+tNum].forEach(id=>{
+    const b=document.getElementById(id);
+    if(b){b.textContent=nowWatched?'✓ Watched':'○ Mark as Watched';b.style.cssText=wStyle;b.onclick=()=>markWatched(tNum,!nowWatched);}
+  });
 
   // Update watched header line in modal
   const mw=document.querySelector('.m-watched');
@@ -1052,11 +1061,22 @@ async function openPlex(tNum){
       const results=(d.MediaContainer?.Metadata||[]);
       const match=results.find(m=>String(m.year)==String(g.year))||results[0];
       if(match){
-        const appUrl=`plex://preplay/?metadataKey=%2Flibrary%2Fmetadata%2F${match.ratingKey}&server=${PLEX_MACHINE}`;
-        const webUrl=`https://app.plex.tv/desktop#!/server/${PLEX_MACHINE}/details?key=%2Flibrary%2Fmetadata%2F${match.ratingKey}`;
-        const isMobile=/Android|iPhone|iPad/i.test(navigator.userAgent);
-        if(isMobile){window.location.href=appUrl;setTimeout(()=>window.open(webUrl,'_blank'),1200);}
-        else{window.open(webUrl,'_blank');}
+        const metaKey=`%2Flibrary%2Fmetadata%2F${match.ratingKey}`;
+        const webUrl=`https://app.plex.tv/desktop#!/server/${PLEX_MACHINE}/details?key=${metaKey}`;
+        const ua=navigator.userAgent;
+        const isAndroid=/Android/i.test(ua);
+        const isIOS=/iPhone|iPad|iPod/i.test(ua);
+        if(isAndroid){
+          // Android intent URI: tries Plex app, falls back to Play Store
+          const intentUrl=`intent://preplay/?metadataKey=${metaKey}&server=${PLEX_MACHINE}#Intent;scheme=plex;package=com.plexapp.android;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
+          window.location.href=intentUrl;
+        } else if(isIOS){
+          const appUrl=`plex://preplay/?metadataKey=${metaKey}&server=${PLEX_MACHINE}`;
+          window.location.href=appUrl;
+          setTimeout(()=>{if(!document.hidden)window.open(webUrl,'_blank');},1500);
+        } else {
+          window.open(webUrl,'_blank');
+        }
         if(btn){btn.textContent='▶ Play on Plex';btn.disabled=false;}return;
       }
     }
@@ -1097,24 +1117,25 @@ async function openM(g){
   if(g.trailer_yt)acts.push(`<button class="btn btn-trailer" onclick="openTR('${g.trailer_yt}','${esc4(g.title)}')">▶ Trailer</button>`);
   if(g.imdb)acts.push(`<a href="https://www.imdb.com/title/${g.imdb}/" target="_blank" class="btn btn-imdb">IMDb</a>`);
   if(g.tmdb)acts.push(`<a href="https://www.themoviedb.org/movie/${g.tmdb}" target="_blank" class="btn btn-tmdb">TMDB</a>`);
-  // Watched toggle - only shown if token present (owner only)
+  // Watched toggle - rendered separately in hero area on mobile, in actions on desktop
   loadGistConfig();
   const isOwner=!!GITHUB_TOKEN;
-  const watchedBtnStyle=g.watched?'background:rgba(80,200,80,.15);border-color:#50c850;color:#50c850':'';
-  // Always show watched button for owner; show read-only label for visitors
+  const watchedBtnStyle=g.watched?'background:rgba(82,183,136,.18);border-color:var(--green);color:var(--green)':'background:var(--surf);border-color:var(--bdr2);color:var(--t2)';
+  let watchedBtnH='';
   if(isOwner){
-    acts.push('<button class="btn" id="watched-btn-'+g.t+'" style="'+watchedBtnStyle+'" onclick="markWatched('+g.t+','+(g.watched?'false':'true')+')">'+(g.watched?'✓ Watched':'○ Mark as Watched')+'</button>');
+    watchedBtnH='<button class="btn btn-watched" id="watched-btn-'+g.t+'" style="'+watchedBtnStyle+'" onclick="markWatched('+g.t+','+(g.watched?'false':'true')+')">'+(g.watched?'✓ Watched':'○ Mark as Watched')+'</button>';
   } else if(g.watched){
-    acts.push('<span class="btn" style="opacity:.6;cursor:default;'+watchedBtnStyle+'">✓ Watched</span>');
+    watchedBtnH='<span class="btn btn-watched" style="opacity:.6;cursor:default;'+watchedBtnStyle+'">✓ Watched</span>';
   }
-  let castH='<div class="cast-grid">'+((g.cast||[]).slice(0,24).map(c=>`<div class="cast-card" onclick="setPerson('${esc4(c.actor)}')"><div class="cast-face">👤</div><div class="cast-name">${x(c.actor)}</div><div class="cast-char">${x(c.character||'')}</div></div>`).join(''))+'</div>';
+  if(watchedBtnH) acts.push(watchedBtnH.replace('id="watched-btn-','id="watched-btn-d-'));
+  let castH='<div class="cast-grid" id="cast-grid-'+g.t+'">'+((g.cast||[]).slice(0,24).map(c=>`<div class="cast-card" data-name="${esc4(c.actor)}" onclick="setPerson('${esc4(c.actor)}')"><div class="cast-face">👤</div><div class="cast-name">${x(c.actor)}</div><div class="cast-char">${x(c.character||'')}</div></div>`).join(''))+'</div>';
   if(!(g.cast||[]).length)castH='<p style="color:var(--t3);font-size:13px">No cast data.</p>';
   const crewItems=[];
   if(g.director)g.director.split(',').forEach(d=>crewItems.push({role:'Direction',name:d.trim()}));
   if(g.writers)g.writers.split(',').slice(0,3).forEach(d=>crewItems.push({role:'Screenplay',name:d.trim()}));
   if(g.cinematog)g.cinematog.split(',').forEach(d=>crewItems.push({role:'Cinematography',name:d.trim()}));
   if(g.composer)g.composer.split(',').forEach(d=>crewItems.push({role:'Music',name:d.trim()}));
-  const crewH=crewItems.length?`<div class="crew-list">${crewItems.map(c=>`<div class="crew-row" onclick="setPerson('${esc4(c.name)}')"><span class="crew-role">${c.role}</span><span class="crew-name">${x(c.name)}</span></div>`).join('')}</div>`:'<p style="color:var(--t3);font-size:13px">No crew data.</p>';
+  const crewH=crewItems.length?`<div class="crew-list" id="crew-list-${g.t}">${crewItems.map(c=>`<div class="crew-row" data-name="${esc4(c.name)}" onclick="setPerson('${esc4(c.name)}')"><div class="crew-face">👤</div><span class="crew-role">${c.role}</span><span class="crew-name">${x(c.name)}</span></div>`).join('')}</div>`:'<p style="color:var(--t3);font-size:13px">No crew data.</p>';
   const verH='<div class="ver-list">'+copies.map(c=>{
     const aT=(c.audio||[]).map(a=>`<span class="badge" style="background:#1e2a1e;color:#7dc87d;border:1px solid #3a5a3a;font-size:11px;padding:3px 8px">🔊 ${a}</span>`).join('');
     const sT=(c.subs||[]).map(s=>`<span class="badge" style="background:#1a2535;color:#7ab8d8;border:1px solid #2a4a65;font-size:11px;padding:3px 8px">💬 ${s}</span>`).join('');
@@ -1132,7 +1153,7 @@ async function openM(g){
         <div class="m-dir" onclick="setPerson('${esc4(g.director||'')}')">↳ ${x(g.director||'')}</div>
         <div class="m-badges">${allBdg}</div>
         <div id="mstar-${g.t}" style="min-height:20px"></div>
-        ${watchedH}
+        <div class="m-watched-row">${watchedH}${watchedBtnH?`<span class="m-watched-btn-wrap">${watchedBtnH}</span>`:''}</div>
       </div>
     </div>
     <div class="mbody">
@@ -1164,10 +1185,56 @@ async function openM(g){
   document.body.style.overflow='hidden';
   const _g=g;
   fetchRatings(_g).then(rats=>{const el=document.getElementById('mrats-'+_g.t);if(el)el.innerHTML=renderRatings(rats);});
+  fetchCreditsPortraits(_g);
   const pr=getPlexRating(_g.t);
   if(pr){const sel=document.getElementById('mstar-'+_g.t);if(sel)sel.innerHTML=starsH(pr/2,16)+`<span style="font-size:11px;color:var(--t3);margin-left:6px">Your Plex rating</span>`;}
   const prev=getPlexReview(_g.t);
   if(prev){const sumEl=document.querySelector('#mc .summary');if(sumEl)sumEl.insertAdjacentHTML('afterend',`<div style="background:var(--surf);border:1.5px solid var(--gold);border-radius:6px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:var(--text);line-height:1.7"><div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:6px">Your Review</div>${x(prev)}</div>`);}
+}
+
+// ── CAST/CREW PORTRAITS FROM TMDB ──
+const creditsCache={};
+async function fetchCreditsPortraits(g){
+  const tmdbId=g.tmdb;
+  if(!tmdbId)return;
+  let credits=creditsCache[tmdbId];
+  if(!credits){
+    try{
+      const r=await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/credits?api_key=${TMDB_KEY}`);
+      if(!r.ok)return;
+      credits=await r.json();
+      creditsCache[tmdbId]=credits;
+    }catch(e){return;}
+  }
+  // Build name→profile_path maps
+  const castMap={};
+  (credits.cast||[]).forEach(c=>{if(c.profile_path)castMap[c.name.toLowerCase()]=c.profile_path;});
+  const crewMap={};
+  (credits.crew||[]).forEach(c=>{if(c.profile_path)crewMap[c.name.toLowerCase()]=c.profile_path;});
+  // Populate cast faces
+  const castGrid=document.getElementById('cast-grid-'+g.t);
+  if(castGrid){
+    castGrid.querySelectorAll('.cast-card').forEach(card=>{
+      const name=(card.getAttribute('data-name')||'').toLowerCase();
+      const path=castMap[name];
+      if(path){
+        const face=card.querySelector('.cast-face');
+        if(face)face.innerHTML=`<img src="https://image.tmdb.org/t/p/w185${path}" alt="" loading="lazy">`;
+      }
+    });
+  }
+  // Populate crew faces
+  const crewList=document.getElementById('crew-list-'+g.t);
+  if(crewList){
+    crewList.querySelectorAll('.crew-row').forEach(row=>{
+      const name=(row.getAttribute('data-name')||'').toLowerCase();
+      const path=crewMap[name]||castMap[name];
+      if(path){
+        const face=row.querySelector('.crew-face');
+        if(face)face.innerHTML=`<img src="https://image.tmdb.org/t/p/w185${path}" alt="" loading="lazy">`;
+      }
+    });
+  }
 }
 
 function switchTab(idx,el){
