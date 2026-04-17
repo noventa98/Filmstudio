@@ -952,50 +952,64 @@ function showGistSettings(){
 
 
 // ── MARK AS WATCHED ──
-async function markWatched(tNum, watched=true){
+async function markWatched(tNum, nowWatched){
   const g=catalog.find(g=>g.t===tNum);
   if(!g)return;
   loadGistConfig();
   const k=String(tNum);
-  if(watched){
-    const today=new Date().toISOString().slice(0,10);
-    const existing=plexWatched[k]||{};
-    plexWatched[k]={
-      ...existing,
-      manual:true,
-      count:(existing.count||0)+1,
+
+  if(nowWatched){
+    plexWatched[k]=Object.assign(plexWatched[k]||{},{
+      manual:true, manual_unwatched:false,
+      count:((plexWatched[k]||{}).count||0)+1,
       last:Math.floor(Date.now()/1000),
-      date_watched:today
-    };
+      date_watched:new Date().toISOString().slice(0,10)
+    });
     g.watched=true;
     g.date_watched=new Date().toLocaleDateString('en-GB',{year:'numeric',month:'short',day:'numeric'});
   } else {
-    // Mark as manually unwatched - overrides both Plex and Movie Buddy data
-    plexWatched[k]={...(plexWatched[k]||{}),count:0,last:null,manual_unwatched:true};
+    plexWatched[k]=Object.assign(plexWatched[k]||{},{
+      manual_unwatched:true, count:0, last:null
+    });
     g.watched=false;
     g.date_watched=null;
   }
-  // Save locally
+
   localStorage.setItem('plexWatched',JSON.stringify(plexWatched));
-  // Update button UI including onclick for toggle
+
+  // Update button
   const btn=document.getElementById('watched-btn-'+tNum);
   if(btn){
-    btn.textContent=watched?'✓ Watched':'○ Mark as Watched';
-    btn.style.background=watched?'rgba(80,200,80,.15)':'';
-    btn.style.borderColor=watched?'#50c850':'';
-    btn.style.color=watched?'#50c850':'';
-    btn.onclick=()=>markWatched(tNum,!watched);
+    btn.textContent=nowWatched?'✓ Watched':'○ Mark as Watched';
+    btn.style.cssText=nowWatched?'background:rgba(80,200,80,.15);border-color:#50c850;color:#50c850':'';
+    btn.onclick=()=>markWatched(tNum,!nowWatched);
   }
-  // Update card
-  const card=document.querySelector(`.card .ci .ct`);
-  buildSB();
-  // Push to Gist if token available
-  if(GITHUB_TOKEN){
-    const ok=await pushToGist();
-    if(ok)console.log('Watched status pushed to Gist');
+
+  // Update watched header line in modal
+  const mw=document.querySelector('.m-watched');
+  if(mw){
+    mw.textContent=nowWatched?'✓ Watched'+(g.date_watched?' · '+g.date_watched:''):'';
+    mw.style.display=nowWatched?'':'none';
   }
-  // Update card checkmark without full re-render
-  buildSB(); applyF(); updateH();
+
+  // Update card checkmark
+  document.querySelectorAll('.card').forEach(card=>{
+    const ct=card.querySelector('.ct');
+    if(ct&&ct.textContent.includes('T'+String(tNum).padStart(4,'0'))){
+      card.classList.toggle('watched-card',nowWatched);
+      const existing=card.querySelector('.watched-mark');
+      if(nowWatched&&!existing){
+        const d=document.createElement('div');d.className='watched-mark';d.textContent='✓';card.appendChild(d);
+      } else if(!nowWatched&&existing){
+        existing.remove();
+      }
+    }
+  });
+
+  buildSB(); updateH();
+
+  // Push to Gist
+  if(GITHUB_TOKEN) pushToGist().then(ok=>ok&&console.log('Pushed to Gist'));
 }
 
 
@@ -1087,10 +1101,11 @@ async function openM(g){
   loadGistConfig();
   const isOwner=!!GITHUB_TOKEN;
   const watchedBtnStyle=g.watched?'background:rgba(80,200,80,.15);border-color:#50c850;color:#50c850':'';
+  // Always show watched button for owner; show read-only label for visitors
   if(isOwner){
-    acts.push(`<button class="btn" id="watched-btn-${g.t}" style="${watchedBtnStyle}" onclick="markWatched(${g.t},${!g.watched})">${g.watched?'✓ Watched':'○ Mark as Watched'}</button>`);
+    acts.push('<button class="btn" id="watched-btn-'+g.t+'" style="'+watchedBtnStyle+'" onclick="markWatched('+g.t+','+(g.watched?'false':'true')+')">'+(g.watched?'✓ Watched':'○ Mark as Watched')+'</button>');
   } else if(g.watched){
-    acts.push(`<span class="btn" style="opacity:.6;cursor:default;${watchedBtnStyle}">✓ Watched</span>`);
+    acts.push('<span class="btn" style="opacity:.6;cursor:default;'+watchedBtnStyle+'">✓ Watched</span>');
   }
   let castH='<div class="cast-grid">'+((g.cast||[]).slice(0,24).map(c=>`<div class="cast-card" onclick="setPerson('${esc4(c.actor)}')"><div class="cast-face">👤</div><div class="cast-name">${x(c.actor)}</div><div class="cast-char">${x(c.character||'')}</div></div>`).join(''))+'</div>';
   if(!(g.cast||[]).length)castH='<p style="color:var(--t3);font-size:13px">No cast data.</p>';
