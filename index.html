@@ -155,8 +155,8 @@ aside::-webkit-scrollbar-thumb{background:var(--bdr2)}
 .m-stars{display:flex;gap:2px;font-size:15px;margin-bottom:6px}
 .m-watched{font-size:12px;color:var(--green)}
 .m-watched-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px}
-.btn-watched{font-size:12px;padding:6px 14px;border-radius:20px;border-width:1.5px;border-style:solid;transition:all .2s}
-.btn-watched .w-extra{display:none}
+.btn-watched{font-size:12px;padding:6px 14px;border-radius:20px;border-width:1.5px;border-style:solid;transition:all .2s;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn-watched .w-extra{display:none;font-weight:400;opacity:.8}
 /* On desktop, hide hero watched button — show in actions row instead */
 .m-watched-btn-wrap{display:none}
 @media(max-width:768px){
@@ -834,7 +834,7 @@ async function syncPlexData(statusEl){
     if(!pf)return;
     matched++;
     const k=String(g.t);
-    const plexInfo={addedAt:pf.addedAt||null};
+    const plexInfo={addedAt:pf.addedAt||null,ratingKey:pf.ratingKey||null};
     if((pf.viewCount||0)>0){plexInfo.count=pf.viewCount;plexInfo.last=pf.lastViewedAt||null;watched++;}
     if(Object.keys(plexInfo).length>0)plexWatched[k]=plexInfo;
     if(pf.userRating){plexRatings[k]=pf.userRating;rated++;}
@@ -1052,43 +1052,50 @@ function importPlex(e){
 }
 
 // ── PLEX DEEP LINKS ──
+function plexNavigate(rKey, title){
+  const metaKey=`%2Flibrary%2Fmetadata%2F${rKey}`;
+  const webUrl=`https://app.plex.tv/desktop#!/server/${PLEX_MACHINE}/details?key=${metaKey}`;
+  const ua=navigator.userAgent;
+  if(/Android/i.test(ua)){
+    window.location.href=`intent://preplay/?metadataKey=${metaKey}&server=${PLEX_MACHINE}#Intent;scheme=plex;package=com.plexapp.android;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
+  } else if(/iPhone|iPad|iPod/i.test(ua)){
+    window.location.href=`plex://preplay/?metadataKey=${metaKey}&server=${PLEX_MACHINE}`;
+    setTimeout(()=>{if(!document.hidden)window.open(webUrl,'_blank');},1500);
+  } else {
+    window.open(webUrl,'_blank');
+  }
+}
 async function openPlex(tNum){
   const g=catalog.find(g=>g.t===tNum);if(!g)return;
   const btn=document.getElementById('plexbtn-'+tNum);
   if(btn){btn.textContent='Loading...';btn.disabled=true;}
+  // 1. Try cached ratingKey from last Plex sync (works from any network)
+  const cached=plexWatched[String(tNum)];
+  if(cached&&cached.ratingKey){
+    plexNavigate(cached.ratingKey, g.title);
+    if(btn){btn.textContent='▶ Play on Plex';btn.disabled=false;}
+    return;
+  }
+  // 2. Try live search on local Plex server (home WiFi only)
   try{
-    const q2=encodeURIComponent(g.title);
-    const r=await fetch(`${PLEX_LOCAL}/search?query=${q2}&type=1&X-Plex-Token=${PLEX_TOKEN}`,{headers:{Accept:'application/json'}});
+    const r=await fetch(`${PLEX_LOCAL}/search?query=${encodeURIComponent(g.title)}&type=1&X-Plex-Token=${PLEX_TOKEN}`,{headers:{Accept:'application/json'}});
     if(r.ok){
       const d=await r.json();
       const results=(d.MediaContainer?.Metadata||[]);
       const match=results.find(m=>String(m.year)==String(g.year))||results[0];
       if(match){
-        const metaKey=`%2Flibrary%2Fmetadata%2F${match.ratingKey}`;
-        const webUrl=`https://app.plex.tv/desktop#!/server/${PLEX_MACHINE}/details?key=${metaKey}`;
-        const ua=navigator.userAgent;
-        const isAndroid=/Android/i.test(ua);
-        const isIOS=/iPhone|iPad|iPod/i.test(ua);
-        if(isAndroid){
-          // Android intent URI: tries Plex app, falls back to Play Store
-          const intentUrl=`intent://preplay/?metadataKey=${metaKey}&server=${PLEX_MACHINE}#Intent;scheme=plex;package=com.plexapp.android;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
-          window.location.href=intentUrl;
-        } else if(isIOS){
-          const appUrl=`plex://preplay/?metadataKey=${metaKey}&server=${PLEX_MACHINE}`;
-          window.location.href=appUrl;
-          setTimeout(()=>{if(!document.hidden)window.open(webUrl,'_blank');},1500);
-        } else {
-          window.open(webUrl,'_blank');
-        }
-        if(btn){btn.textContent='▶ Play on Plex';btn.disabled=false;}return;
+        // Cache for next time
+        plexWatched[String(tNum)]=Object.assign(plexWatched[String(tNum)]||{},{ratingKey:match.ratingKey});
+        try{localStorage.setItem('plexWatched',JSON.stringify(plexWatched));}catch(e){}
+        plexNavigate(match.ratingKey, g.title);
+        if(btn){btn.textContent='▶ Play on Plex';btn.disabled=false;}
+        return;
       }
     }
   }catch(e){}
+  // 3. Fallback: open Plex web with search
   if(btn){btn.textContent='▶ Play on Plex';btn.disabled=false;}
-  // Fallback: open Plex universal link (app intercepts app.plex.tv URLs on mobile)
-  const plexSearch=`https://app.plex.tv/desktop#!/search?query=${encodeURIComponent(g.title)}`;
-  const a=document.createElement('a');a.href=plexSearch;a.target='_blank';a.rel='noopener';
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  window.open(`https://app.plex.tv/desktop#!/search?query=${encodeURIComponent(g.title)}`,'_blank');
 }
 
 // ── EXTRAS ──
@@ -1268,7 +1275,7 @@ function esc4(s){return s?String(s).replace(/'/g,'&#39;').replace(/"/g,'&quot;')
 </script>
 
 <!-- Trailer overlay -->
-<div id="trovl" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:400;align-items:center;justify-content:center;flex-direction:column;gap:14px">
+<div id="trovl">
   <span onclick="closeTR()" style="position:absolute;top:16px;right:20px;color:#fff;font-size:28px;cursor:pointer;opacity:.6;line-height:1">✕</span>
   <div style="display:flex;align-items:center;gap:16px"><div id="tr-title" style="color:rgba(255,255,255,.6);font-size:13px;font-family:'Cormorant Garamond',serif;font-style:italic"></div><a id="tr-ytlink" href="#" target="_blank" style="color:rgba(255,255,255,.5);font-size:12px;text-decoration:underline">Watch on YouTube ↗</a></div>
   <iframe id="trframe" style="width:min(900px,90vw);aspect-ratio:16/9;border:none;border-radius:8px" allowfullscreen allow="autoplay;encrypted-media"></iframe>
