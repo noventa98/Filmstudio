@@ -784,7 +784,7 @@ function refreshFromPlex(){
       // Only mark watched if actually viewed (count>0 or last viewed timestamp)
       if((pw.count||0)>0||pw.last){
         g.watched=true;
-        if(pw.last)g.date_watched=new Date(pw.last*1000).toLocaleDateString('en-GB',{year:'numeric',month:'short',day:'numeric'});
+        if(pw.last)g.date_watched=fmtDate(new Date(pw.last*1000));
       }
       // Always store addedAt for sorting by recently added
       if(pw.addedAt)g.date_added_plex=new Date(pw.addedAt*1000).toISOString().slice(0,10);
@@ -981,7 +981,7 @@ async function markWatched(tNum, nowWatched){
       date_watched:new Date().toISOString().slice(0,10)
     });
     g.watched=true;
-    g.date_watched=new Date().toLocaleDateString('en-GB',{year:'numeric',month:'short',day:'numeric'});
+    g.date_watched=fmtDate(new Date());
   } else {
     plexWatched[k]=Object.assign(plexWatched[k]||{},{
       manual_unwatched:true, count:0, last:null
@@ -1146,9 +1146,7 @@ async function openM(g){
   const isOwner=!!GITHUB_TOKEN;
   const watchedBtnStyle=g.watched?'background:rgba(82,183,136,.18);border-color:var(--green);color:var(--green)':'background:var(--surf);border-color:var(--bdr2);color:var(--t2)';
   let watchedBtnH='';
-  // Short date for mobile display (e.g. "12 Jan 2026" → "Jan 26")
-  const wDateShort=g.date_watched?g.date_watched.replace(/^\d+\s/,'').replace(/\s\d{2}(\d{2})$/," '$1"):'';
-  const wExtra=g.watched?((wDateShort?' · '+wDateShort:'')+(g.my_rating?' · '+g.my_rating+'★':'')):'';
+  const wExtra=g.watched&&g.date_watched?' · '+g.date_watched:'';
   if(isOwner){
     watchedBtnH='<button class="btn btn-watched" id="watched-btn-'+g.t+'" style="'+watchedBtnStyle+'" onclick="markWatched('+g.t+','+(g.watched?'false':'true')+')">'+(g.watched?'✓ Watched':'○ Watch')+'<span class="w-extra">'+wExtra+'</span></button>';
   } else if(g.watched){
@@ -1211,7 +1209,15 @@ async function openM(g){
   document.getElementById('ovl').classList.add('open');
   document.body.style.overflow='hidden';
   const _g=g;
-  fetchRatings(_g).then(rats=>{const el=document.getElementById('mrats-'+_g.t);if(el)el.innerHTML=renderRatings(rats);});
+  fetchRatings(_g).then(rats=>{
+    const el=document.getElementById('mrats-'+_g.t);if(el)el.innerHTML=renderRatings(rats);
+    // Fallback stars: Plex → RT → IMDB
+    const sel=document.getElementById('mstar-'+_g.t);
+    if(sel&&!sel.innerHTML){
+      if(rats.rt){const p=parseInt(rats.rt.val);sel.innerHTML=starsH(p/20,16)+`<span style="font-size:11px;color:var(--t3);margin-left:6px">Rotten Tomatoes ${rats.rt.val}</span>`;}
+      else if(rats.imdb){sel.innerHTML=starsH(parseFloat(rats.imdb.val)/2,16)+`<span style="font-size:11px;color:var(--t3);margin-left:6px">IMDb ${rats.imdb.val}/10</span>`;}
+    }
+  });
   fetchCreditsPortraits(_g);
   const pr=getPlexRating(_g.t);
   if(pr){const sel=document.getElementById('mstar-'+_g.t);if(sel)sel.innerHTML=starsH(pr/2,16)+`<span style="font-size:11px;color:var(--t3);margin-left:6px">Your Plex rating</span>`;}
@@ -1282,6 +1288,15 @@ function updateH(){
   document.getElementById('hs').innerHTML=`<span><b>${t.toLocaleString()}</b> titles</span><span><span class="pdot"></span><b>${p.toLocaleString()}</b> on Plex</span><span><b>${k4}</b> in 4K</span><span>✓ <b>${w}</b> watched</span>`;
 }
 
+function fmtDate(d){
+  if(!d)d=new Date();
+  if(typeof d==='string')d=new Date(d);
+  const day=d.getDate();
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const m=months[d.getMonth()];
+  const mf=m.length>4?m.slice(0,3):m;
+  return`${day} ${mf} ${d.getFullYear()}`;
+}
 function x(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):''}
 function esc4(s){return s?String(s).replace(/'/g,'&#39;').replace(/"/g,'&quot;'):''}
 
