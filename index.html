@@ -156,11 +156,13 @@ aside::-webkit-scrollbar-thumb{background:var(--bdr2)}
 .m-watched{font-size:12px;color:var(--green)}
 .m-watched-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px}
 .btn-watched{font-size:12px;padding:6px 14px;border-radius:20px;border-width:1.5px;border-style:solid;transition:all .2s}
+.btn-watched .w-extra{display:none}
 /* On desktop, hide hero watched button — show in actions row instead */
 .m-watched-btn-wrap{display:none}
 @media(max-width:768px){
   .m-watched-btn-wrap{display:inline-flex}
   .m-watched-row .m-watched{display:none}
+  .btn-watched .w-extra{display:inline}
   .mact .btn-watched{display:none}
 }
 
@@ -1083,17 +1085,10 @@ async function openPlex(tNum){
     }
   }catch(e){}
   if(btn){btn.textContent='▶ Play on Plex';btn.disabled=false;}
-  // Fallback: open Plex app via universal link with search query
-  const ua2=navigator.userAgent;
-  const fallbackSearch=`https://app.plex.tv/desktop#!/search?query=${encodeURIComponent(g.title)}`;
-  if(/Android/i.test(ua2)){
-    window.location.href=`intent://search?query=${encodeURIComponent(g.title)}#Intent;scheme=plex;package=com.plexapp.android;S.browser_fallback_url=${encodeURIComponent(fallbackSearch)};end`;
-  } else if(/iPhone|iPad|iPod/i.test(ua2)){
-    window.location.href=`plex://search?query=${encodeURIComponent(g.title)}`;
-    setTimeout(()=>{if(!document.hidden)window.open(fallbackSearch,'_blank');},1500);
-  } else {
-    window.open(fallbackSearch,'_blank');
-  }
+  // Fallback: open Plex universal link (app intercepts app.plex.tv URLs on mobile)
+  const plexSearch=`https://app.plex.tv/desktop#!/search?query=${encodeURIComponent(g.title)}`;
+  const a=document.createElement('a');a.href=plexSearch;a.target='_blank';a.rel='noopener';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
 }
 
 // ── EXTRAS ──
@@ -1133,10 +1128,11 @@ async function openM(g){
   const isOwner=!!GITHUB_TOKEN;
   const watchedBtnStyle=g.watched?'background:rgba(82,183,136,.18);border-color:var(--green);color:var(--green)':'background:var(--surf);border-color:var(--bdr2);color:var(--t2)';
   let watchedBtnH='';
+  const wExtra=g.watched?((g.date_watched?' · '+g.date_watched:'')+(g.my_rating?' · '+g.my_rating+'★':'')):'';
   if(isOwner){
-    watchedBtnH='<button class="btn btn-watched" id="watched-btn-'+g.t+'" style="'+watchedBtnStyle+'" onclick="markWatched('+g.t+','+(g.watched?'false':'true')+')">'+(g.watched?'✓ Watched':'○ Mark as Watched')+'</button>';
+    watchedBtnH='<button class="btn btn-watched" id="watched-btn-'+g.t+'" style="'+watchedBtnStyle+'" onclick="markWatched('+g.t+','+(g.watched?'false':'true')+')">'+(g.watched?'✓ Watched':'○ Mark as Watched')+'<span class="w-extra">'+wExtra+'</span></button>';
   } else if(g.watched){
-    watchedBtnH='<span class="btn btn-watched" style="opacity:.6;cursor:default;'+watchedBtnStyle+'">✓ Watched</span>';
+    watchedBtnH='<span class="btn btn-watched" style="opacity:.6;cursor:default;'+watchedBtnStyle+'">✓ Watched<span class="w-extra">'+wExtra+'</span></span>';
   }
   if(watchedBtnH) acts.push(watchedBtnH.replace('id="watched-btn-','id="watched-btn-d-'));
   let castH='<div class="cast-grid" id="cast-grid-'+g.t+'">'+((g.cast||[]).slice(0,24).map(c=>`<div class="cast-card" data-name="${esc4(c.actor)}" onclick="setPerson('${esc4(c.actor)}')"><div class="cast-face">👤</div><div class="cast-name">${x(c.actor)}</div><div class="cast-char">${x(c.character||'')}</div></div>`).join(''))+'</div>';
