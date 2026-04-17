@@ -456,9 +456,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   buildSB(); applyF(); updateH();
   // Apply local data first, then try to pull fresh from Gist
   if(Object.keys(plexWatched).length>0) setTimeout(refreshFromPlex,200);
-  if(GITHUB_TOKEN&&GIST_ID){
-    setTimeout(()=>pullFromGist(true),1000); // silent auto-pull
-  }
+  // Always auto-pull from public Gist on page load
+  setTimeout(async()=>{
+    const ok=await pullFromGist(true);
+    if(ok)console.log('Auto-pull from Gist successful');
+  },1500);
   document.getElementById('sq').addEventListener('input',e=>{
     q=e.target.value.toLowerCase().trim(); applyF();
     const msq=document.getElementById('msq');if(msq)msq.value=e.target.value;
