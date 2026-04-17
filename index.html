@@ -160,6 +160,7 @@ aside::-webkit-scrollbar-thumb{background:var(--bdr2)}
 .m-watched-btn-wrap{display:none}
 @media(max-width:768px){
   .m-watched-btn-wrap{display:inline-flex}
+  .m-watched-row .m-watched{display:none}
   .mact .btn-watched{display:none}
 }
 
@@ -1082,7 +1083,17 @@ async function openPlex(tNum){
     }
   }catch(e){}
   if(btn){btn.textContent='▶ Play on Plex';btn.disabled=false;}
-  window.open('https://app.plex.tv/desktop','_blank');
+  // Fallback: open Plex app via universal link with search query
+  const ua2=navigator.userAgent;
+  const fallbackSearch=`https://app.plex.tv/desktop#!/search?query=${encodeURIComponent(g.title)}`;
+  if(/Android/i.test(ua2)){
+    window.location.href=`intent://search?query=${encodeURIComponent(g.title)}#Intent;scheme=plex;package=com.plexapp.android;S.browser_fallback_url=${encodeURIComponent(fallbackSearch)};end`;
+  } else if(/iPhone|iPad|iPod/i.test(ua2)){
+    window.location.href=`plex://search?query=${encodeURIComponent(g.title)}`;
+    setTimeout(()=>{if(!document.hidden)window.open(fallbackSearch,'_blank');},1500);
+  } else {
+    window.open(fallbackSearch,'_blank');
+  }
 }
 
 // ── EXTRAS ──
