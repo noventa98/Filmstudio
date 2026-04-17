@@ -821,18 +821,26 @@ async function syncPlexData(statusEl){
   }
   if(!allFilms.length){if(statusEl)statusEl.textContent='No films returned';return;}
   if(statusEl)statusEl.textContent='Matching '+allFilms.length+' films...';
-  const plexIdx={};
+  // Build indexes: by IMDB ID, TMDB ID, and title+year
+  const plexByImdb={}, plexByTmdb={}, plexByTitle={};
   allFilms.forEach(f=>{
+    // Extract external IDs from Plex Guid array
+    (f.Guid||[]).forEach(g2=>{
+      const id=g2.id||'';
+      if(id.startsWith('imdb://'))plexByImdb[id.slice(7)]=f;
+      else if(id.startsWith('tmdb://'))plexByTmdb[id.slice(7)]=f;
+    });
     const t=(f.title||'').toLowerCase().trim();
     const y=String(f.year||'');
-    plexIdx[t+'|'+y]=f;
-    if(!plexIdx[t])plexIdx[t]=f;
+    plexByTitle[t+'|'+y]=f;
+    if(!plexByTitle[t])plexByTitle[t]=f;
   });
   let watched=0,rated=0,matched=0;
   catalog.forEach(g=>{
     if(!g.on_plex)return;
+    // Match by IMDB ID, then TMDB ID, then title+year, then title
     const t=(g.title||'').toLowerCase().trim();
-    const pf=plexIdx[t+'|'+String(g.year||'')]||plexIdx[t];
+    const pf=(g.imdb&&plexByImdb[g.imdb])||(g.tmdb&&plexByTmdb[String(g.tmdb)])||plexByTitle[t+'|'+String(g.year||'')]||plexByTitle[t];
     if(!pf)return;
     matched++;
     const k=String(g.t);
