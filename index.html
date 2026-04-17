@@ -951,6 +951,57 @@ function showGistSettings(){
 }
 
 
+// ── MARK AS WATCHED ──
+async function markWatched(tNum, watched=true){
+  const g=catalog.find(g=>g.t===tNum);
+  if(!g)return;
+  loadGistConfig();
+  const k=String(tNum);
+  if(watched){
+    const today=new Date().toISOString().slice(0,10);
+    const existing=plexWatched[k]||{};
+    plexWatched[k]={
+      ...existing,
+      manual:true,
+      count:(existing.count||0)+1,
+      last:Math.floor(Date.now()/1000),
+      date_watched:today
+    };
+    g.watched=true;
+    g.date_watched=new Date().toLocaleDateString('en-GB',{year:'numeric',month:'short',day:'numeric'});
+  } else {
+    // Mark as manually unwatched - overrides both Plex and Movie Buddy data
+    plexWatched[k]={...(plexWatched[k]||{}),count:0,last:null,manual_unwatched:true};
+    g.watched=false;
+    g.date_watched=null;
+  }
+  // Save locally
+  localStorage.setItem('plexWatched',JSON.stringify(plexWatched));
+  // Update button UI
+  const btn=document.getElementById('watched-btn-'+tNum);
+  if(btn){
+    btn.textContent=watched?'✓ Watched':'○ Mark as Watched';
+    btn.style.background=watched?'rgba(80,200,80,.15)':'';
+    btn.style.borderColor=watched?'#50c850':'';
+    btn.style.color=watched?'#50c850':'';
+  }
+  // Update card
+  const card=document.querySelector(`.card .ci .ct`);
+  buildSB();
+  // Push to Gist if token available
+  if(GITHUB_TOKEN){
+    const ok=await pushToGist();
+    if(ok)console.log('Watched status pushed to Gist');
+  }
+  // Re-render to update card checkmark
+  const pos=shown;
+  shown=0;
+  document.getElementById('grid').innerHTML='';
+  render();
+  shown=pos;
+}
+
+
 // ── EXPORT / IMPORT ──
 function exportPlex(){
   const d={plexRatings,plexReviews,plexWatched,exportedAt:new Date().toISOString()};
@@ -1035,6 +1086,13 @@ async function openM(g){
   if(g.trailer_yt)acts.push(`<button class="btn btn-trailer" onclick="openTR('${g.trailer_yt}','${esc4(g.title)}')">▶ Trailer</button>`);
   if(g.imdb)acts.push(`<a href="https://www.imdb.com/title/${g.imdb}/" target="_blank" class="btn btn-imdb">IMDb</a>`);
   if(g.tmdb)acts.push(`<a href="https://www.themoviedb.org/movie/${g.tmdb}" target="_blank" class="btn btn-tmdb">TMDB</a>`);
+  // Watched toggle - only shown if token present (owner only)
+  loadGistConfig();
+  const isOwner=!!GITHUB_TOKEN;
+  const watchedBtnStyle=g.watched?'background:rgba(80,200,80,.15);border-color:#50c850;color:#50c850':'';
+  if(isOwner||g.watched){
+    acts.push(`<button class="btn" id="watched-btn-${g.t}" style="${watchedBtnStyle}" onclick="markWatched(${g.t},${!g.watched})">${g.watched?'✓ Watched':'○ Mark as Watched'}</button>`);
+  }
   let castH='<div class="cast-grid">'+((g.cast||[]).slice(0,24).map(c=>`<div class="cast-card" onclick="setPerson('${esc4(c.actor)}')"><div class="cast-face">👤</div><div class="cast-name">${x(c.actor)}</div><div class="cast-char">${x(c.character||'')}</div></div>`).join(''))+'</div>';
   if(!(g.cast||[]).length)castH='<p style="color:var(--t3);font-size:13px">No cast data.</p>';
   const crewItems=[];
