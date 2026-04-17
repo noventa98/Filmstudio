@@ -977,13 +977,14 @@ async function markWatched(tNum, watched=true){
   }
   // Save locally
   localStorage.setItem('plexWatched',JSON.stringify(plexWatched));
-  // Update button UI
+  // Update button UI including onclick for toggle
   const btn=document.getElementById('watched-btn-'+tNum);
   if(btn){
     btn.textContent=watched?'✓ Watched':'○ Mark as Watched';
     btn.style.background=watched?'rgba(80,200,80,.15)':'';
     btn.style.borderColor=watched?'#50c850':'';
     btn.style.color=watched?'#50c850':'';
+    btn.onclick=()=>markWatched(tNum,!watched);
   }
   // Update card
   const card=document.querySelector(`.card .ci .ct`);
@@ -993,12 +994,8 @@ async function markWatched(tNum, watched=true){
     const ok=await pushToGist();
     if(ok)console.log('Watched status pushed to Gist');
   }
-  // Re-render to update card checkmark
-  const pos=shown;
-  shown=0;
-  document.getElementById('grid').innerHTML='';
-  render();
-  shown=pos;
+  // Update card checkmark without full re-render
+  buildSB(); applyF(); updateH();
 }
 
 
@@ -1090,8 +1087,10 @@ async function openM(g){
   loadGistConfig();
   const isOwner=!!GITHUB_TOKEN;
   const watchedBtnStyle=g.watched?'background:rgba(80,200,80,.15);border-color:#50c850;color:#50c850':'';
-  if(isOwner||g.watched){
+  if(isOwner){
     acts.push(`<button class="btn" id="watched-btn-${g.t}" style="${watchedBtnStyle}" onclick="markWatched(${g.t},${!g.watched})">${g.watched?'✓ Watched':'○ Mark as Watched'}</button>`);
+  } else if(g.watched){
+    acts.push(`<span class="btn" style="opacity:.6;cursor:default;${watchedBtnStyle}">✓ Watched</span>`);
   }
   let castH='<div class="cast-grid">'+((g.cast||[]).slice(0,24).map(c=>`<div class="cast-card" onclick="setPerson('${esc4(c.actor)}')"><div class="cast-face">👤</div><div class="cast-name">${x(c.actor)}</div><div class="cast-char">${x(c.character||'')}</div></div>`).join(''))+'</div>';
   if(!(g.cast||[]).length)castH='<p style="color:var(--t3);font-size:13px">No cast data.</p>';
