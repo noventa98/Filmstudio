@@ -1057,11 +1057,12 @@ function importPlex(e){
 function plexNavigate(rKey, title){
   const metaPath=`/library/metadata/${rKey}`;
   const webUrl=`https://app.plex.tv/desktop#!/server/${PLEX_MACHINE}/details?key=${encodeURIComponent(metaPath)}`;
+  // watch.plex.tv is the domain the Plex app registers for on Android/iOS
+  const appUrl=`https://watch.plex.tv/#!/server/${PLEX_MACHINE}/details?key=${encodeURIComponent(metaPath)}`;
   const ua=navigator.userAgent;
   if(/Android|iPhone|iPad|iPod/i.test(ua)){
-    // Use web URL — Plex app registers as handler for app.plex.tv links
     const a=document.createElement('a');
-    a.href=webUrl;
+    a.href=appUrl;
     a.style.display='none';
     document.body.appendChild(a);
     a.click();
@@ -1101,7 +1102,7 @@ async function openPlex(tNum){
   }catch(e){}
   // 3. Fallback: no ratingKey — open Plex web search
   if(btn){btn.textContent='No key — searching...';btn.disabled=false;}
-  const fallbackUrl=`https://app.plex.tv/desktop#!/search?query=${encodeURIComponent(g.title)}`;
+  const fallbackUrl=`https://watch.plex.tv/#!/search?query=${encodeURIComponent(g.title)}`;
   const a=document.createElement('a');a.href=fallbackUrl;a.style.display='none';
   document.body.appendChild(a);a.click();setTimeout(()=>document.body.removeChild(a),100);
 }
@@ -1131,7 +1132,7 @@ async function openM(g){
   const genres=(g.genres_mb||g.genre||'').split(',').map(x=>x.trim()).filter(Boolean).join(' · ');
   const posterSrc=pCache[key]?`https://image.tmdb.org/t/p/w342${pCache[key]}`:'';
   const posterH=posterSrc?`<img src="${posterSrc}" alt="${x(g.title)}" style="width:100%;aspect-ratio:2/3;border-radius:8px;object-fit:cover">`:`<div class="ph" style="height:285px;background:var(--bg3);border-radius:8px"><div class="ph-i">🎬</div><div class="ph-t">${x(g.title)}</div></div>`;
-  const watchedH=g.watched?`<div class="m-watched">✓ Watched${g.date_watched?' · '+g.date_watched:''}${g.my_rating?' · '+g.my_rating+'★':''}</div>`:'';
+  const watchedH=g.watched?`<div class="m-watched">✓ Watched${g.date_watched?' · '+g.date_watched:''}</div>`:'';
   const allBdg=[g.on_plex?`<span class="badge bp">PLEX</span>`:'',resBdg(g.resolution),g.rating?`<span class="badge bs">${x(g.rating)}</span>`:''].filter(Boolean).join('');
   const acts=[];
   if(g.on_plex)acts.push(`<button class="btn btn-plex" id="plexbtn-${g.t}" onclick="openPlex(${g.t})">▶ Play on Plex</button>`);
