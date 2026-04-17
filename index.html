@@ -836,7 +836,11 @@ async function syncPlexData(statusEl){
     if(!pf)return;
     matched++;
     const k=String(g.t);
-    const plexInfo={addedAt:pf.addedAt||null,ratingKey:pf.ratingKey||null};
+    // Extract Plex GUID (e.g. "plex://movie/5d776..." → "5d776...")
+    let plexGuid=null;
+    if(pf.guid){const m=pf.guid.match(/plex:\/\/movie\/([a-f0-9]+)/);if(m)plexGuid=m[1];}
+    if(!plexGuid&&pf.Guid){(pf.Guid||[]).forEach(g2=>{const m=(g2.id||'').match(/plex:\/\/movie\/([a-f0-9]+)/);if(m)plexGuid=m[1];});}
+    const plexInfo={addedAt:pf.addedAt||null,ratingKey:pf.ratingKey||null,plexGuid:plexGuid};
     if((pf.viewCount||0)>0){plexInfo.count=pf.viewCount;plexInfo.last=pf.lastViewedAt||null;watched++;}
     if(Object.keys(plexInfo).length>0)plexWatched[k]=plexInfo;
     if(pf.userRating){plexRatings[k]=pf.userRating;rated++;}
@@ -1054,12 +1058,12 @@ function importPlex(e){
 }
 
 // ── PLEX DEEP LINKS ──
-function plexNavigate(rKey, title){
+function plexNavigate(rKey, title, plexGuid){
   const metaKey=encodeURIComponent(`/library/metadata/${rKey}`);
   const webUrl=`https://app.plex.tv/desktop#!/server/${PLEX_MACHINE}/details?key=${metaKey}`;
-  // Build watch.plex.tv slug from title (Plex app handles this domain)
+  // Build watch.plex.tv URL (Plex app handles this domain)
   const slug=title.toLowerCase().replace(/['']/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
-  const appUrl=`https://watch.plex.tv/movie/${slug}`;
+  const appUrl=`https://watch.plex.tv/movie/${slug}${plexGuid?'?utm_content='+plexGuid:''}`;
   const ua=navigator.userAgent;
   if(/Android|iPhone|iPad|iPod/i.test(ua)){
     window.location.href=appUrl;
@@ -1075,7 +1079,7 @@ async function openPlex(tNum){
   const cached=plexWatched[String(tNum)];
   if(cached&&cached.ratingKey){
     if(btn){btn.textContent='Opening...';}
-    plexNavigate(cached.ratingKey, g.title);
+    plexNavigate(cached.ratingKey, g.title, cached.plexGuid);
     setTimeout(()=>{if(btn){btn.textContent='▶ Play on Plex';btn.disabled=false;}},2000);
     return;
   }
@@ -1090,7 +1094,7 @@ async function openPlex(tNum){
         // Cache for next time
         plexWatched[String(tNum)]=Object.assign(plexWatched[String(tNum)]||{},{ratingKey:match.ratingKey});
         try{localStorage.setItem('plexWatched',JSON.stringify(plexWatched));}catch(e){}
-        plexNavigate(match.ratingKey, g.title);
+        plexNavigate(match.ratingKey, g.title, null);
         if(btn){btn.textContent='▶ Play on Plex';btn.disabled=false;}
         return;
       }
