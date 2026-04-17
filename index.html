@@ -1057,14 +1057,12 @@ function importPlex(e){
 function plexNavigate(rKey, title){
   const metaKey=encodeURIComponent(`/library/metadata/${rKey}`);
   const webUrl=`https://app.plex.tv/desktop#!/server/${PLEX_MACHINE}/details?key=${metaKey}`;
+  // Build watch.plex.tv slug from title (Plex app handles this domain)
+  const slug=title.toLowerCase().replace(/['']/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+  const appUrl=`https://watch.plex.tv/movie/${slug}`;
   const ua=navigator.userAgent;
-  if(/Android/i.test(ua)){
-    // Try intent with plex:// scheme — encode server+key as path
-    const intentUrl=`intent://play/?machineIdentifier=${PLEX_MACHINE}&key=%2Flibrary%2Fmetadata%2F${rKey}#Intent;scheme=plex;package=com.plexapp.android;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
-    window.location.href=intentUrl;
-  } else if(/iPhone|iPad|iPod/i.test(ua)){
-    window.location.href=`plex://play/?machineIdentifier=${PLEX_MACHINE}&key=%2Flibrary%2Fmetadata%2F${rKey}`;
-    setTimeout(()=>{if(!document.hidden)window.open(webUrl,'_blank');},1500);
+  if(/Android|iPhone|iPad|iPod/i.test(ua)){
+    window.location.href=appUrl;
   } else {
     window.open(webUrl,'_blank');
   }
