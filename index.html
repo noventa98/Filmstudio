@@ -160,10 +160,11 @@ aside::-webkit-scrollbar-thumb{background:var(--bdr2)}
 /* On desktop, hide hero watched button — show in actions row instead */
 .m-watched-btn-wrap{display:none}
 @media(max-width:768px){
-  .m-watched-btn-wrap{display:inline-flex;max-width:100%}
+  .m-watched-btn-wrap{display:flex;flex-direction:column;align-items:flex-start;gap:2px;max-width:100%}
   .m-watched-row .m-watched{display:none}
-  .btn-watched .w-extra{display:inline}
-  .btn-watched{font-size:11px;padding:5px 12px}
+  .btn-watched .w-extra{display:block;font-size:10px;opacity:.7;margin-top:1px}
+  .btn-watched{font-size:11px;padding:5px 12px;white-space:normal}
+  .mact .btn-watched{display:none}
   .mact .btn-watched{display:none}
 }
 
@@ -258,7 +259,7 @@ aside::-webkit-scrollbar-thumb{background:var(--bdr2)}
   #modal{border-radius:16px 16px 0 0;max-height:92vh;width:100%;border-bottom:none;border-left:none;border-right:none}
   .mcl{top:10px;right:10px}
   /* Modal hero */
-  .mhero{grid-template-columns:100px 1fr;min-height:150px}
+  .mhero{grid-template-columns:100px minmax(0,1fr);min-height:150px}
   .mposter{width:100px;padding:12px 0 12px 12px}
   .mposter img,.mposter .ph{width:100%;aspect-ratio:2/3;border-radius:6px;object-fit:cover;height:auto}
   .mposter .ph{height:126px}
