@@ -672,9 +672,9 @@ function gcardH(g){
   const hasX=g.copies&&g.copies.some(c=>c.extras&&c.extras!=='-');
   return `<div class="pi" data-t="${g.t}">
     <div class="ph"><div class="ph-i">🎬</div><div class="ph-t">${x(g.title)}</div><div class="ph-y">${g.year||''}</div></div>
+    ${g.watched?'<div class="watched-mark">✓</div>':''}
   </div>
   <div class="cbdg">${pb}${rb}${sb}</div>
-  ${g.watched?'<div class="watched-mark">✓</div>':''}
   ${g.copy_count>1?`<div class="cv-badge">${g.copy_count}×</div>`:''}
   <div class="ci">
     <div class="ct">T${pad(g.t)} · #${g.id}</div>
@@ -1023,7 +1023,7 @@ async function markWatched(tNum, nowWatched){
       card.classList.toggle('watched-card',nowWatched);
       const existing=card.querySelector('.watched-mark');
       if(nowWatched&&!existing){
-        const d=document.createElement('div');d.className='watched-mark';d.textContent='✓';card.appendChild(d);
+        const d=document.createElement('div');d.className='watched-mark';d.textContent='✓';(card.querySelector('.pi')||card).appendChild(d);
       } else if(!nowWatched&&existing){
         existing.remove();
       }
