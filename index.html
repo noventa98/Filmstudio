@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://image.tmdb.org; frame-src https://www.youtube-nocookie.com https://www.youtube.com; connect-src 'self' https://api.github.com https://api.themoviedb.org https://www.omdbapi.com https://image.tmdb.org; object-src 'none'; base-uri 'self'; form-action 'self';">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Film Library</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -974,18 +976,66 @@ function exportPlex(){
   a.download='plex-sync.json';a.click();
   alert(`Exported ${w} watched · ${Object.keys(plexRatings).length} rated`);
 }
+// Strict validators for imported Plex data (defense against malicious JSON)
+function validatePlexWatched(obj){
+  if(!obj||typeof obj!=='object'||Array.isArray(obj))return null;
+  const clean={};
+  for(const k in obj){
+    if(!/^\d{1,6}$/.test(k))continue; // T-number must be numeric
+    const v=obj[k];
+    if(!v||typeof v!=='object'||Array.isArray(v))continue;
+    const entry={};
+    if(typeof v.addedAt==='number')entry.addedAt=v.addedAt;
+    if(typeof v.ratingKey==='string'&&/^\d{1,12}$/.test(v.ratingKey))entry.ratingKey=v.ratingKey;
+    if(typeof v.ratingKey==='number')entry.ratingKey=String(v.ratingKey);
+    if(typeof v.plexGuid==='string'&&/^[a-f0-9]{1,40}$/.test(v.plexGuid))entry.plexGuid=v.plexGuid;
+    if(typeof v.count==='number'&&v.count>=0&&v.count<10000)entry.count=v.count;
+    if(typeof v.last==='number')entry.last=v.last;
+    if(typeof v.manual==='boolean')entry.manual=v.manual;
+    if(typeof v.manual_unwatched==='boolean')entry.manual_unwatched=v.manual_unwatched;
+    if(typeof v.date_watched==='string'&&/^[\d\- ]{1,20}$/.test(v.date_watched))entry.date_watched=v.date_watched;
+    clean[k]=entry;
+  }
+  return clean;
+}
+function validatePlexRatings(obj){
+  if(!obj||typeof obj!=='object'||Array.isArray(obj))return null;
+  const clean={};
+  for(const k in obj){
+    if(!/^\d{1,6}$/.test(k))continue;
+    const v=parseFloat(obj[k]);
+    if(!isNaN(v)&&v>=0&&v<=10)clean[k]=v;
+  }
+  return clean;
+}
+function validatePlexReviews(obj){
+  if(!obj||typeof obj!=='object'||Array.isArray(obj))return null;
+  const clean={};
+  for(const k in obj){
+    if(!/^\d{1,6}$/.test(k))continue;
+    if(typeof obj[k]==='string'&&obj[k].length<5000)clean[k]=obj[k];
+  }
+  return clean;
+}
+
 function importPlex(e){
   const file=e.target.files[0];if(!file)return;
+  if(file.size>10*1024*1024){alert('File too large (max 10MB).');e.target.value='';return;}
   const reader=new FileReader();
   reader.onload=ev=>{
     try{
       const d=JSON.parse(ev.target.result);
-      if(d.plexWatched){Object.assign(plexWatched,d.plexWatched);localStorage.setItem('plexWatched',JSON.stringify(plexWatched));}
-      if(d.plexRatings){Object.assign(plexRatings,d.plexRatings);localStorage.setItem('plexRatings',JSON.stringify(plexRatings));}
-      if(d.plexReviews){Object.assign(plexReviews,d.plexReviews);localStorage.setItem('plexReviews',JSON.stringify(plexReviews));}
+      const vw=validatePlexWatched(d.plexWatched);
+      const vr=validatePlexRatings(d.plexRatings);
+      const vv=validatePlexReviews(d.plexReviews);
+      if(!vw&&!vr&&!vv){alert('No valid data in file.');return;}
+      if(!confirm(`Import ${vw?Object.keys(vw).length:0} watched, ${vr?Object.keys(vr).length:0} rated, ${vv?Object.keys(vv).length:0} reviews from this file?`)){return;}
+      if(vw){Object.assign(plexWatched,vw);localStorage.setItem('plexWatched',JSON.stringify(plexWatched));}
+      if(vr){Object.assign(plexRatings,vr);localStorage.setItem('plexRatings',JSON.stringify(plexRatings));}
+      if(vv){Object.assign(plexReviews,vv);localStorage.setItem('plexReviews',JSON.stringify(plexReviews));}
       alert(`Imported: ${Object.keys(plexWatched).length} watched · ${Object.keys(plexRatings).length} rated`);
       refreshFromPlex();
-    }catch(err){alert('Invalid file.');}
+    }catch(err){alert('Invalid JSON file.');}
   };
   reader.readAsText(file);e.target.value='';
 }
