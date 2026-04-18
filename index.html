@@ -101,7 +101,7 @@ aside::-webkit-scrollbar-thumb{background:var(--bdr2)}
 .bs{background:#3a3a3a;color:#aaa}
 .bf{background:rgba(0,0,0,.75);color:var(--t2);border:1px solid var(--bdr2);font-size:9px}
 .bl{background:#333;color:#777}
-.watched-mark{position:absolute;bottom:7px;right:7px;background:rgba(82,183,136,.9);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;z-index:2}
+.watched-mark{position:absolute;bottom:6px;right:6px;background:rgba(82,183,136,.7);border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;z-index:2;box-shadow:0 1px 3px rgba(0,0,0,.4)}
 .cv-badge{position:absolute;top:7px;right:7px;background:rgba(0,0,0,.78);border:1px solid var(--bdr2);border-radius:4px;font-size:10px;color:var(--t2);font-family:'JetBrains Mono',monospace;padding:2px 6px;z-index:2}
 .ci{padding:11px 11px 10px}
 .ct{font-size:10px;color:var(--t2);font-family:'JetBrains Mono',monospace;margin-bottom:3px;opacity:.75}
@@ -116,6 +116,7 @@ aside::-webkit-scrollbar-thumb{background:var(--bdr2)}
 .star-e{color:var(--bdr2)}
 .xdot{font-size:10px;flex-shrink:0}
 .vcount{font-size:10px;color:var(--t3);margin-left:auto}
+.runtime{font-size:10px;color:var(--t3);margin-left:auto;font-family:'JetBrains Mono',monospace}
 
 /* ── LIST CARD ── */
 .card.lc{display:flex;align-items:stretch}
@@ -628,7 +629,7 @@ function allNames(g){
 
 function setPerson(name){personFilter=name;document.getElementById('personName').textContent=name;document.getElementById('personPill').classList.add('show');closeM();applyF();}
 function clearPerson(){personFilter=null;document.getElementById('personPill').classList.remove('show');applyF();}
-function resetAll(){filt={storage:null,res:null,plex:null,genre:null,country:null,rating:null,watched:null};yf='';yt='';q='';personFilter=null;srt='title';document.getElementById('sq').value='';document.getElementById('personPill').classList.remove('show');buildSB();applyF();}
+function resetAll(){filt={storage:null,res:null,plex:null,genre:null,country:null,rating:null,watched:null};yf='';yt='';q='';personFilter=null;srt='title';document.getElementById('sq').value='';const _msq=document.getElementById('msq');if(_msq)_msq.value='';document.getElementById('personPill').classList.remove('show');buildSB();applyF();}
 
 function sa(t=''){
   const arts=['the ','a ','an ','le ','la ','les ',"l'",'un ','une ','il ','lo ','der ','die ','das ','el ','los ','las '];
@@ -681,6 +682,7 @@ function gcardH(g){
     <div class="cm"><span class="di">${x(g.director_short||g.director||'')}</span><span class="yr2">${g.year||''}</span></div>
     <div class="cf">
       ${starsH(g.my_rating)}
+      ${g.duration?`<span class="runtime">${g.duration}′</span>`:''}
     </div>
   </div>`;
 }
@@ -1165,7 +1167,7 @@ async function openM(g){
   const verH='<div class="ver-list">'+copies.map(c=>{
     const aT=(c.audio||[]).map(a=>`<span class="badge" style="background:#1e2a1e;color:#7dc87d;border:1px solid #3a5a3a;font-size:11px;padding:3px 8px">🔊 ${a}</span>`).join('');
     const sT=(c.subs||[]).map(s=>`<span class="badge" style="background:#1a2535;color:#7ab8d8;border:1px solid #2a4a65;font-size:11px;padding:3px 8px">💬 ${s}</span>`).join('');
-    const eT=c.extras&&c.extras!=='-'?`<span class="badge" style="background:rgba(200,160,74,.15);color:var(--gold)" title="${x(c.extras)}">⭐ Extras</span>`:'';
+    const eT=c.extras&&c.extras!=='-'?`<span class="badge" style="background:rgba(200,160,74,.15);color:var(--gold);display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px" title="${x(c.extras)}"><span style="font-size:9px">⭐</span>Extras</span>`:'';
     const daH=c.date_added?`<span style="font-size:10px;color:var(--t2);margin-left:6px">Added ${c.date_added}</span>`:'';
     return`<div class="ver-row"><div class="ver-top"><span class="ver-stor">${x(c.storage_label||c.storage||'')}</span>${resBdg(c.resolution)}${c.on_plex?`<span class="badge bp">PLEX</span>`:''}<span style="margin-left:auto;font-size:11px;color:var(--t2);font-family:'JetBrains Mono',monospace">#${c.id}</span>${daH}</div><div class="ver-meta">${aT}${sT}${eT}</div>${c.publisher?`<div class="ver-pub">${x(c.publisher)}${c.pub_year&&c.pub_year!=='NA'?' · '+c.pub_year:''}</div>`:''} ${c.note?`<div class="ver-note">📝 ${x(c.note)}</div>`:''}</div>`;
   }).join('')+'</div>';
