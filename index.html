@@ -725,7 +725,14 @@ async function loadP(pi,g){
 function setP(pi,path){
   const img=document.createElement('img');
   img.src=`https://image.tmdb.org/t/p/w300${path}`;
-  img.onload=()=>{img.classList.add('vis');pi.innerHTML='';pi.appendChild(img);};
+  img.onload=()=>{
+    img.classList.add('vis');
+    // Preserve watched mark across poster swap
+    const wm=pi.querySelector('.watched-mark');
+    pi.innerHTML='';
+    pi.appendChild(img);
+    if(wm)pi.appendChild(wm);
+  };
 }
 
 // ── VIEW ──
