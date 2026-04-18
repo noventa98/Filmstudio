@@ -530,11 +530,11 @@ function buildSB(){
   h+=`</div><div class="sd"></div>`;
   const gTop=Object.entries(gc).sort((a,b)=>b[1]-a[1]).slice(0,18);
   h+=`<div class="ss"><div class="st">Genre</div>`;
-  gTop.forEach(([g2,c])=>{const gs=g2.replace(/'/g,"\\'");h+=`<button class="fb${filt.genre===g2?' on':''}" onclick="setF('genre','${gs}')">${g2}<span class="cn">${c}</span></button>`;});
+  gTop.forEach(([g2,c])=>{h+=`<button class="fb${filt.genre===g2?' on':''}" onclick="setF('genre','${xj(g2)}')">${x(g2)}<span class="cn">${c}</span></button>`;});
   h+=`</div><div class="sd"></div>`;
   const cTop=Object.entries(cc).sort((a,b)=>b[1]-a[1]).slice(0,18);
   h+=`<div class="ss"><div class="st">Country</div>`;
-  cTop.forEach(([c2,n])=>{const cs=c2.replace(/'/g,"\\'");h+=`<button class="fb${filt.country===c2?' on':''}" onclick="setF('country','${cs}')">${c2}<span class="cn">${n}</span></button>`;});
+  cTop.forEach(([c2,n])=>{h+=`<button class="fb${filt.country===c2?' on':''}" onclick="setF('country','${xj(c2)}')">${x(c2)}<span class="cn">${n}</span></button>`;});
   h+=`</div>`;
   // Audio language filter
   const audioLangs=['EN','FR','IT','SP','JP','DE','RU','CH','SW','GR','PT','KO'];
@@ -721,8 +721,10 @@ async function loadP(pi,g){
   }catch(e){}
 }
 function setP(pi,path){
+  const sp=safePosterPath(path);
+  if(!sp)return;
   const img=document.createElement('img');
-  img.src=`https://image.tmdb.org/t/p/w300${path}`;
+  img.src=`https://image.tmdb.org/t/p/w300${sp}`;
   img.onload=()=>{
     img.classList.add('vis');
     // Preserve watched mark across poster swap
@@ -1032,17 +1034,22 @@ function closeTR(){document.getElementById('trframe').src='';document.getElement
 async function openM(g){
   const copies=g.copies||[g];
   const key=g.tmdb||g.imdb||`${g.title}:${g.year}`;
-  const backdrop=imgCache[key]?`https://image.tmdb.org/t/p/w1280${imgCache[key]}`:'';
+  const _bp=safePosterPath(imgCache[key]);
+  const backdrop=_bp?`https://image.tmdb.org/t/p/w1280${_bp}`:'';
   const genres=(g.genres_mb||g.genre||'').split(',').map(x=>x.trim()).filter(Boolean).join(' · ');
-  const posterSrc=pCache[key]?`https://image.tmdb.org/t/p/w342${pCache[key]}`:'';
+  const _pp=safePosterPath(pCache[key]);
+  const posterSrc=_pp?`https://image.tmdb.org/t/p/w342${_pp}`:'';
   const posterH=posterSrc?`<img src="${posterSrc}" alt="${x(g.title)}" style="width:100%;aspect-ratio:2/3;border-radius:8px;object-fit:cover">`:`<div class="ph" style="height:285px;background:var(--bg3);border-radius:8px"><div class="ph-i">🎬</div><div class="ph-t">${x(g.title)}</div></div>`;
   const watchedH=g.watched?`<div class="m-watched">✓ Watched${g.date_watched?' · '+g.date_watched:''}</div>`:'';
   const allBdg=[g.on_plex?`<span class="badge bp">PLEX</span>`:'',resBdg(g.resolution),g.rating?`<span class="badge bs">${x(g.rating)}</span>`:''].filter(Boolean).join('');
   const acts=[];
   if(g.on_plex)acts.push(`<button class="btn btn-plex" id="plexbtn-${g.t}" onclick="openPlex(${g.t})">▶ Play on Plex</button>`);
-  if(g.trailer_yt)acts.push(`<button class="btn btn-trailer" onclick="openTR('${g.trailer_yt}','${esc4(g.title)}')">▶ Trailer</button>`);
-  if(g.imdb)acts.push(`<a href="https://www.imdb.com/title/${g.imdb}/" target="_blank" class="btn btn-imdb">IMDb</a>`);
-  if(g.tmdb)acts.push(`<a href="https://www.themoviedb.org/movie/${g.tmdb}" target="_blank" class="btn btn-tmdb">TMDB</a>`);
+  const ytId=safeYtId(g.trailer_yt);
+  if(ytId)acts.push(`<button class="btn btn-trailer" onclick="openTR('${ytId}','${xj(g.title)}')">▶ Trailer</button>`);
+  const imdbId=safeImdbId(g.imdb);
+  if(imdbId)acts.push(`<a href="https://www.imdb.com/title/${imdbId}/" target="_blank" class="btn btn-imdb">IMDb</a>`);
+  const tmdbId=safeTmdbId(g.tmdb);
+  if(tmdbId)acts.push(`<a href="https://www.themoviedb.org/movie/${tmdbId}" target="_blank" class="btn btn-tmdb">TMDB</a>`);
   // Watched toggle - rendered separately in hero area on mobile, in actions on desktop
   loadGistConfig();
   const isOwner=!!GITHUB_TOKEN;
@@ -1065,11 +1072,11 @@ async function openM(g){
   if(g.composer)splitNames(g.composer).forEach(d=>crewItems.push({role:'Music',name:d}));
   const crewH=crewItems.length?`<div class="crew-list" id="crew-list-${g.t}">${crewItems.map(c=>`<div class="crew-row" data-name="${esc4(c.name)}" onclick="setPerson('${esc4(c.name)}')"><div class="crew-face">👤</div><span class="crew-role">${c.role}</span><span class="crew-name">${x(c.name)}</span></div>`).join('')}</div>`:'<p style="color:var(--t3);font-size:13px">No crew data.</p>';
   const verH='<div class="ver-list">'+copies.map(c=>{
-    const aT=(c.audio||[]).map(a=>`<span class="badge" style="background:#1e2a1e;color:#7dc87d;border:1px solid #3a5a3a;font-size:11px;padding:3px 8px">🔊 ${a}</span>`).join('');
-    const sT=(c.subs||[]).map(s=>`<span class="badge" style="background:#1a2535;color:#7ab8d8;border:1px solid #2a4a65;font-size:11px;padding:3px 8px">💬 ${s}</span>`).join('');
+    const aT=(c.audio||[]).map(a=>`<span class="badge" style="background:#1e2a1e;color:#7dc87d;border:1px solid #3a5a3a;font-size:11px;padding:3px 8px">🔊 ${x(a)}</span>`).join('');
+    const sT=(c.subs||[]).map(s=>`<span class="badge" style="background:#1a2535;color:#7ab8d8;border:1px solid #2a4a65;font-size:11px;padding:3px 8px">💬 ${x(s)}</span>`).join('');
     const eT=c.extras&&c.extras!=='-'?`<span class="badge" style="background:rgba(200,160,74,.15);color:var(--gold);display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px" title="${x(c.extras)}"><span style="font-size:9px">⭐</span>Extras</span>`:'';
-    const daH=c.date_added?`<span style="font-size:10px;color:var(--t2);margin-left:6px">Added ${c.date_added}</span>`:'';
-    return`<div class="ver-row"><div class="ver-top"><span class="ver-stor">${x(c.storage_label||c.storage||'')}</span>${resBdg(c.resolution)}${c.on_plex?`<span class="badge bp">PLEX</span>`:''}<span style="margin-left:auto;font-size:11px;color:var(--t2);font-family:'JetBrains Mono',monospace">#${c.id}</span>${daH}</div><div class="ver-meta">${aT}${sT}${eT}</div>${c.publisher?`<div class="ver-pub">${x(c.publisher)}${c.pub_year&&c.pub_year!=='NA'?' · '+c.pub_year:''}</div>`:''} ${c.note?`<div class="ver-note">📝 ${x(c.note)}</div>`:''}</div>`;
+    const daH=c.date_added?`<span style="font-size:10px;color:var(--t2);margin-left:6px">Added ${x(c.date_added)}</span>`:'';
+    return`<div class="ver-row"><div class="ver-top"><span class="ver-stor">${x(c.storage_label||c.storage||'')}</span>${resBdg(c.resolution)}${c.on_plex?`<span class="badge bp">PLEX</span>`:''}<span style="margin-left:auto;font-size:11px;color:var(--t2);font-family:'JetBrains Mono',monospace">#${x(c.id)}</span>${daH}</div><div class="ver-meta">${aT}${sT}${eT}</div>${c.publisher?`<div class="ver-pub">${x(c.publisher)}${c.pub_year&&c.pub_year!=='NA'?' · '+x(c.pub_year):''}</div>`:''} ${c.note?`<div class="ver-note">📝 ${x(c.note)}</div>`:''}</div>`;
   }).join('')+'</div>';
   document.getElementById('mc').innerHTML=`
     <div class="mhero">
@@ -1156,7 +1163,8 @@ async function fetchCreditsPortraits(g){
       const path=castMap[name];
       if(path){
         const face=card.querySelector('.cast-face');
-        if(face)face.innerHTML=`<img src="https://image.tmdb.org/t/p/w185${path}" alt="" loading="lazy">`;
+        const sp=safePosterPath(path);
+        if(face&&sp)face.innerHTML=`<img src="https://image.tmdb.org/t/p/w185${sp}" alt="" loading="lazy">`;
       }
     });
   }
@@ -1168,7 +1176,8 @@ async function fetchCreditsPortraits(g){
       const path=crewMap[name]||castMap[name];
       if(path){
         const face=row.querySelector('.crew-face');
-        if(face)face.innerHTML=`<img src="https://image.tmdb.org/t/p/w185${path}" alt="" loading="lazy">`;
+        const sp=safePosterPath(path);
+        if(face&&sp)face.innerHTML=`<img src="https://image.tmdb.org/t/p/w185${sp}" alt="" loading="lazy">`;
       }
     });
   }
@@ -1201,8 +1210,17 @@ function fmtDate(d){
   const mf=m.length>4?m.slice(0,3):m;
   return`${day} ${mf} '${String(d.getFullYear()).slice(2)}`;
 }
-function x(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):''}
-function esc4(s){return s?String(s).replace(/'/g,'&#39;').replace(/"/g,'&quot;'):''}
+// HTML text escape: safe for text content and HTML attributes
+function x(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'):''}
+// JS-string context (inside onclick="... '${xj(v)}' ..."): escape for JS single-quoted string, then HTML-encode quotes
+function xj(s){return !s?'':String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+// Legacy alias
+function esc4(s){return xj(s);}
+// Strict ID validators — return safe value or empty string
+function safeImdbId(id){return id&&/^tt\d{5,12}$/.test(id)?id:'';}
+function safeTmdbId(id){return id&&/^\d{1,12}$/.test(String(id))?String(id):'';}
+function safeYtId(id){return id&&/^[\w-]{6,20}$/.test(id)?id:'';}
+function safePosterPath(p){return p&&/^\/[\w\-./]+\.(jpg|jpeg|png|webp)$/i.test(p)?p:'';}
 
 </script>
 
