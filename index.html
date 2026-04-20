@@ -458,7 +458,7 @@ function toggleMore(which){
   buildSB();
 }
 let srt='random', yf='', yt='', q='';
-function shuffleCatalog(){if(window.catalog)catalog.forEach(g=>{g._rng=Math.random();});}
+function shuffleCatalog(){if(typeof catalog!=='undefined'&&catalog.length)catalog.forEach(g=>{g._rng=Math.random();});}
 const pCache={}, imgCache={}, plexCache={};
 const rCache=JSON.parse(sessionStorage.getItem('rc')||'{}');
 // Plex sync state - declared BEFORE any use
