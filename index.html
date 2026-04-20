@@ -457,7 +457,8 @@ function toggleMore(which){
   else if(which==='s')sExp=!sExp;
   buildSB();
 }
-let srt='title', yf='', yt='', q='';
+let srt='random', yf='', yt='', q='';
+function shuffleCatalog(){if(window.catalog)catalog.forEach(g=>{g._rng=Math.random();});}
 const pCache={}, imgCache={}, plexCache={};
 const rCache=JSON.parse(sessionStorage.getItem('rc')||'{}');
 // Plex sync state - declared BEFORE any use
@@ -476,6 +477,7 @@ window.addEventListener('resize',checkMobile);
 
 document.addEventListener('DOMContentLoaded',()=>{
   catalog=CATALOG_DATA;
+  shuffleCatalog();
   loadGistConfig();
   document.getElementById('app').classList.add('go');
   buildSB(); applyF(); updateH();
@@ -517,7 +519,7 @@ function buildSB(){
   });
   let h='';
   h+=`<div class="ss"><div class="st">Sort</div><div class="sw">
-    ${['title','year','runtime','added','director','entry'].map(s=>`<button class="sb${srt===s?' on':''}" onclick="setS('${s}')">${{title:'Title',year:'Year',runtime:'Runtime',added:'Recently Added',director:'Director',entry:'Entry'}[s]}</button>`).join('')}
+    ${['random','title','year','runtime','added','director','entry'].map(s=>`<button class="sb${srt===s?' on':''}" onclick="setS('${s}')">${{random:'Shuffle',title:'Title',year:'Year',runtime:'Runtime',added:'Recently Added',director:'Director',entry:'Entry'}[s]}</button>`).join('')}
   </div></div><div class="sd"></div>`;
   h+=`<div class="ss"><div class="st">Release Year</div>
     <div class="yr"><input type="number" id="yfi" placeholder="From" value="${yf}" onchange="setY()" min="1895" max="2030"><span>–</span>
@@ -601,7 +603,7 @@ function buildSB(){
 // ── FILTERS ──
 function setF(t,v){filt[t]=filt[t]===v?null:v;buildSB();applyF();}
 function tog(t,v,c){filt[t]=c?v:null;buildSB();applyF();}
-function setS(s){srt=s;buildSB();applyF();}
+function setS(s){if(s==='random')shuffleCatalog();srt=s;buildSB();applyF();}
 function setY(){yf=document.getElementById('yfi').value;yt=document.getElementById('yti').value;applyF();}
 
 function applyF(){
@@ -639,6 +641,7 @@ function applyF(){
     return true;
   });
   filtered.sort((a,b)=>{
+    if(srt==='random')return(a._rng||0)-(b._rng||0);
     if(srt==='year')return(parseInt(a.year)||9999)-(parseInt(b.year)||9999);
     if(srt==='runtime')return(parseInt(a.duration)||0)-(parseInt(b.duration)||0);
     if(srt==='added'){const ad=g=>g.date_added_plex||g.date_added||'0';return ad(b).localeCompare(ad(a));}
@@ -669,7 +672,7 @@ function allNames(g){
 
 function setPerson(name){personFilter=name;document.getElementById('personName').textContent=name;document.getElementById('personPill').classList.add('show');closeM();applyF();}
 function clearPerson(){personFilter=null;document.getElementById('personPill').classList.remove('show');applyF();}
-function resetAll(){filt={storage:null,res:null,plex:null,genre:null,country:null,rating:null,watched:null};yf='';yt='';q='';personFilter=null;srt='title';document.getElementById('sq').value='';const _msq=document.getElementById('msq');if(_msq)_msq.value='';document.getElementById('personPill').classList.remove('show');buildSB();applyF();}
+function resetAll(){filt={storage:null,res:null,plex:null,genre:null,country:null,rating:null,watched:null};yf='';yt='';q='';personFilter=null;srt='random';shuffleCatalog();document.getElementById('sq').value='';const _msq=document.getElementById('msq');if(_msq)_msq.value='';document.getElementById('personPill').classList.remove('show');buildSB();applyF();}
 
 function sa(t=''){
   const arts=['the ','a ','an ','le ','la ','les ',"l'",'un ','une ','il ','lo ','der ','die ','das ','el ','los ','las '];
