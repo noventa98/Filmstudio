@@ -493,7 +493,8 @@ function buildSB(){
   const sc={},gc={},cc={},rc2={};let pn=0,wn=0;
   catalog.forEach(g=>{
     const s=g.storage||'?'; sc[s]=(sc[s]||0)+1;
-    const genres=(g.genres_mb||g.genre||'').split(',').map(x=>x.trim()).filter(Boolean);
+    // Merge TMDB genres + Excel genres for accurate counts (e.g., "Short" often only in Excel)
+    const genres=Array.from(new Set(((g.genres_mb||'')+','+(g.genre||'')).split(',').map(x=>x.trim()).filter(Boolean)));
     genres.forEach(gn=>{gc[gn]=(gc[gn]||0)+1;});
     if(g.country)cc[g.country]=(cc[g.country]||0)+1;
     const r=g.resolution||'';
@@ -605,7 +606,7 @@ function applyF(){
     if(filt.watchlist==='yes'&&!watchlist[String(g.t)])return false;
     if(filt.watched==='yes'&&!g.watched)return false;
     if(filt.watched==='no'&&g.watched)return false;
-    if(filt.genre){const gs=(g.genres_mb||g.genre||'').split(',').map(x=>x.trim());if(!gs.includes(filt.genre))return false;}
+    if(filt.genre){const gs=((g.genres_mb||'')+','+(g.genre||'')).split(',').map(x=>x.trim());if(!gs.includes(filt.genre))return false;}
     if(filt.country&&g.country!==filt.country)return false;
     if(yf&&g.year&&parseInt(g.year)<parseInt(yf))return false;
     if(yt&&g.year&&parseInt(g.year)>parseInt(yt))return false;
