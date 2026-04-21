@@ -9,3 +9,6 @@ __pycache__/
 
 # Build artifact — keep local only
 catalog_data.json
+
+# Unencrypted build template (local only)
+.index-src.html
