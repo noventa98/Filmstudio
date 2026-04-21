@@ -493,9 +493,12 @@ function buildSB(){
   const sc={},gc={},cc={},rc2={};let pn=0,wn=0;
   catalog.forEach(g=>{
     const s=g.storage||'?'; sc[s]=(sc[s]||0)+1;
-    // Use Excel genre column only (user's canonical taxonomy). TMDB genres_mb ignored here
-    // because it has different labels (Drama vs Dram, Comedy vs Comm, etc.) that would double-count.
-    const genres=(g.genre||'').split(',').map(x=>x.trim()).filter(Boolean);
+    // Primary source: TMDB's genres_mb (fuller labels like Drama, Comedy). Excel fallback
+    // when TMDB missing. Exception: if Excel tags it as "Short", include "Short" too —
+    // TMDB doesn't classify short films as a distinct genre.
+    const genres=(g.genres_mb||g.genre||'').split(',').map(x=>x.trim()).filter(Boolean);
+    const excelGenres=(g.genre||'').split(',').map(x=>x.trim());
+    if(excelGenres.includes('Short')&&!genres.includes('Short'))genres.push('Short');
     genres.forEach(gn=>{gc[gn]=(gc[gn]||0)+1;});
     if(g.country)cc[g.country]=(cc[g.country]||0)+1;
     const r=g.resolution||'';
@@ -607,7 +610,12 @@ function applyF(){
     if(filt.watchlist==='yes'&&!watchlist[String(g.t)])return false;
     if(filt.watched==='yes'&&!g.watched)return false;
     if(filt.watched==='no'&&g.watched)return false;
-    if(filt.genre){const gs=(g.genre||'').split(',').map(x=>x.trim());if(!gs.includes(filt.genre))return false;}
+    if(filt.genre){
+      const gs=(g.genres_mb||g.genre||'').split(',').map(x=>x.trim());
+      const ex=(g.genre||'').split(',').map(x=>x.trim());
+      if(ex.includes('Short'))gs.push('Short');
+      if(!gs.includes(filt.genre))return false;
+    }
     if(filt.country&&g.country!==filt.country)return false;
     if(yf&&g.year&&parseInt(g.year)<parseInt(yf))return false;
     if(yt&&g.year&&parseInt(g.year)>parseInt(yt))return false;
