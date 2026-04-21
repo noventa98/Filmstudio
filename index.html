@@ -73,13 +73,9 @@ aside::-webkit-scrollbar-thumb{background:var(--bdr2)}
 .topbar{display:flex;align-items:center;gap:10px;margin-bottom:16px}
 .rc{font-size:13px;color:var(--t3)}
 .rc b{color:var(--t2)}
-.vbtns{display:flex;gap:4px;margin-left:auto}
-.vb{background:var(--surf);border:1.5px solid var(--bdr);border-radius:5px;padding:5px 9px;cursor:pointer;color:var(--t3);transition:all .15s;font-size:13px;line-height:1}
-.vb.on{background:var(--gdim);border-color:var(--gold);color:var(--gold)}
 
 /* ── GRID ── */
 #grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:16px}
-#grid.lv{grid-template-columns:1fr;gap:5px}
 #nr{display:none;padding:64px 0;text-align:center;color:var(--t3);font-size:15px}
 #lbtn{display:none;margin:24px auto 8px;background:var(--surf);border:1.5px solid var(--bdr2);border-radius:var(--r);padding:11px 36px;color:var(--t2);font-family:'Inter',sans-serif;font-size:14px;cursor:pointer;transition:all .2s}
 #lbtn:hover{background:var(--surf2);color:var(--text)}
@@ -109,6 +105,10 @@ aside::-webkit-scrollbar-thumb{background:var(--bdr2)}
 .ci{padding:11px 11px 10px}
 .ct{font-size:10px;color:var(--t2);font-family:'JetBrains Mono',monospace;margin-bottom:3px;opacity:.75}
 .ctit{font-size:14px;font-weight:600;line-height:1.35;color:#fff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:.01em}
+.imdb-b{display:inline-flex;align-items:center;font-size:9px;font-weight:700;background:#f5c518;color:#000;padding:2px 5px;border-radius:3px;letter-spacing:.03em;font-family:'JetBrains Mono',monospace;line-height:1}
+.rt-b{display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:600;padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;line-height:1.4}
+.rt-b.rt-f{background:rgba(255,80,60,.18);color:#ff7a5e}
+.rt-b.rt-r{background:rgba(100,180,100,.15);color:#77c57f}
 .corig{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:12px;color:var(--t3);line-height:1.3;margin-top:2px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
 .cver{display:inline-block;font-size:9px;font-family:'JetBrains Mono',monospace;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#ffd37a;background:rgba(255,211,122,.12);border:1px solid rgba(255,211,122,.35);border-radius:3px;padding:1px 5px;margin-left:5px;vertical-align:2px}
 .cm{display:flex;align-items:center;gap:5px;margin-top:5px;font-size:12px;color:var(--t2)}
@@ -124,17 +124,6 @@ aside::-webkit-scrollbar-thumb{background:var(--bdr2)}
 .runtime{font-size:10px;color:var(--t3);margin-left:auto;font-family:'JetBrains Mono',monospace}
 
 /* ── LIST CARD ── */
-.card.lc{display:flex;align-items:stretch}
-.card.lc .pi{width:44px;flex-shrink:0;aspect-ratio:auto;height:66px;border-radius:6px 0 0 6px}
-.card.lc .ph-i{font-size:15px}
-.card.lc .ph-t,.card.lc .ph-y{display:none}
-.card.lc .ci{flex:1;display:flex;align-items:center;gap:10px;padding:8px 12px}
-.card.lc .ctit{flex:1;-webkit-line-clamp:1;font-size:14px}
-.card.lc .cm{margin:0;min-width:0}
-.card.lc .ct{margin:0;min-width:50px;flex-shrink:0}
-.card.lc .lbdg{display:flex;gap:4px;flex-shrink:0}
-.card.lc .cbdg{position:static}
-.card.lc .cf{display:none}
 
 /* ── MODAL OVERLAY ── */
 #ovl{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:200;backdrop-filter:blur(6px)}
@@ -256,7 +245,6 @@ aside::-webkit-scrollbar-thumb{background:var(--bdr2)}
   #mobile-search input:focus{border-color:var(--gold)}
   /* Grid */
   #grid{grid-template-columns:repeat(2,1fr);gap:10px}
-  #grid.lv{grid-template-columns:1fr}
   /* Sidebar overlay */
   aside{display:block!important;position:fixed;left:0;top:52px;bottom:0;z-index:150;transform:translateX(-110%);transition:transform .28s ease;box-shadow:4px 0 32px rgba(0,0,0,.7);width:min(300px,85vw)!important;overflow-y:auto}
   aside.open{transform:translateX(0)!important}
@@ -409,10 +397,6 @@ aside::-webkit-scrollbar-thumb{background:var(--bdr2)}
         <div class="rc" id="rc"></div>
         <button id="resetbtn" onclick="resetAll()" style="display:none;background:rgba(200,160,74,.12);border:1.5px solid var(--gold);border-radius:5px;padding:5px 12px;color:var(--gold);font-size:12px;cursor:pointer;font-family:'Inter',sans-serif">&#10005; Reset</button>
         <button id="resetbtn" onclick="resetAll()" style="display:none;background:rgba(200,160,74,.12);border:1.5px solid var(--gold);border-radius:5px;padding:5px 12px;color:var(--gold);font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s" title="Clear all filters">✕ Reset filters</button>
-        <div class="vbtns">
-          <button class="vb on" id="vg" onclick="setV('g')" title="Grid">⊞</button>
-          <button class="vb" id="vl" onclick="setV('l')" title="List">☰</button>
-        </div>
       </div>
       <div id="grid"></div>
       <div id="nr">No films match your filters.</div>
@@ -448,7 +432,7 @@ let GIST_ID='6f043dd46756378e577fc4504c8ce7a5'; // Public gist — readable by a
 // PLEX_LOCAL removed: browser never talks to Plex server directly (security)
 const PLEX_MACHINE='3ce2bbc1836145bcee127fab91fa1fe7ad740674';
 let plexMachineId=PLEX_MACHINE;
-let view='g', personFilter=null;
+let personFilter=null;
 let filt={storage:null,res:null,plex:null,genre:null,country:null,rating:null,watched:null,audio:null,sub:null,watchlist:null};
 let cExp=false,aExp=false,sExp=false; // sidebar "see more" state for Country, Audio, Subtitles
 function toggleMore(which){
@@ -519,7 +503,7 @@ function buildSB(){
   });
   let h='';
   h+=`<div class="ss"><div class="st">Sort</div><div class="sw">
-    ${['random','title','year','runtime','added','director','entry'].map(s=>`<button class="sb${srt===s?' on':''}" onclick="setS('${s}')">${{random:'Shuffle',title:'Title',year:'Year',runtime:'Runtime',added:'Recently Added',director:'Director',entry:'Entry'}[s]}</button>`).join('')}
+    ${['random','title','year','runtime','added','director','imdb','rt','entry'].map(s=>`<button class="sb${srt===s?' on':''}" onclick="setS('${s}')">${{random:'Shuffle',title:'Title',year:'Year',runtime:'Runtime',added:'Recently Added',director:'Director',imdb:'IMDb Rating',rt:'Rotten Tomatoes',entry:'Entry'}[s]}</button>`).join('')}
   </div></div><div class="sd"></div>`;
   h+=`<div class="ss"><div class="st">Release Year</div>
     <div class="yr"><input type="number" id="yfi" placeholder="From" value="${yf}" onchange="setY()" min="1895" max="2030"><span>–</span>
@@ -544,6 +528,8 @@ function buildSB(){
   sO.filter(s=>sc[s]).forEach(s=>{h+=`<button class="fb${filt.storage===s?' on':''}" onclick="setF('storage','${s}')" title="${sL[s]||s}">${sL[s]||s}<span class="cn">${sc[s]}</span></button>`;});
   h+=`</div><div class="sd"></div>`;
   const gTop=Object.entries(gc).sort((a,b)=>b[1]-a[1]).slice(0,18);
+  // Ensure "Short" is always visible (pinned even if not in top 18)
+  if(!gTop.some(([g2])=>g2==='Short')&&gc['Short'])gTop.push(['Short',gc['Short']]);
   h+=`<div class="ss"><div class="st">Genre</div>`;
   gTop.forEach(([g2,c])=>{h+=`<button class="fb${filt.genre===g2?' on':''}" onclick="setF('genre','${xj(g2)}')">${x(g2)}<span class="cn">${c}</span></button>`;});
   h+=`</div><div class="sd"></div>`;
@@ -649,6 +635,8 @@ function applyF(){
       const dl=n=>{if(!n)return'zzz';const p=n.trim().split(/\s+/);return p[p.length-1].toLowerCase();};
       return dl(a.director).localeCompare(dl(b.director));
     }
+    if(srt==='imdb'){const iv=g=>{const v=parseFloat(g.imdb_rating);return isNaN(v)?-1:v;};return iv(b)-iv(a);}
+    if(srt==='rt'){const rv=g=>{if(!g.rt_rating)return-1;const v=parseInt(String(g.rt_rating));return isNaN(v)?-1:v;};return rv(b)-rv(a);}
     if(srt==='entry')return(a.id||0)-(b.id||0);
     return sa(a.title).localeCompare(sa(b.title));
   });
@@ -681,19 +669,18 @@ function sa(t=''){
 
 // ── RENDER ──
 function render(){
-  const isL=view==='l';
   const grid=document.getElementById('grid');
   const batch=filtered.slice(shown,shown+PAGE);
   if(!batch.length&&!shown){document.getElementById('nr').style.display='block';return;}
   batch.forEach((g,i)=>{
     try{
       const el=document.createElement('div');
-      el.className=isL?`card lc${g.watched?' watched-card':''}`:`card${g.watched?' watched-card':''}`;
+      el.className=`card${g.watched?' watched-card':''}`;
       el.style.animationDelay=`${Math.min(i,15)*18}ms`;
       el.onclick=()=>openM(g);
-      el.innerHTML=isL?lcardH(g):gcardH(g);
+      el.innerHTML=gcardH(g);
       grid.appendChild(el);
-      if(!isL)obs.observe(el);
+      obs.observe(el);
     }catch(e){console.warn('Card error:',g&&g.title,e.message);}
   });
   shown+=batch.length;
@@ -707,6 +694,8 @@ function starsH(r,size=10){
 }
 function resBdg(r){if(!r)return'';return r.includes('4K')?`<span class="badge b4">4K</span>`:r.includes('HD')?`<span class="badge bh">HD</span>`:`<span class="badge bs">SD</span>`;}
 function storBdg(s){if(!s||['BX','QN','DS'].includes(s))return'';return`<span class="badge bf">${s}</span>`;}
+function imdbBdg(v){if(!v)return'';return`<span class="imdb-b" title="IMDb ${v}">IMDb ${v}</span>`;}
+function rtBdg(v){if(!v)return'';const p=parseInt(String(v));if(isNaN(p))return'';const fresh=p>=60;return`<span class="rt-b ${fresh?'rt-f':'rt-r'}" title="Rotten Tomatoes ${v}">${fresh?'🍅':'🟢'} ${p}%</span>`;}
 
 function gcardH(g){
   if(!g)return'';
@@ -727,19 +716,9 @@ function gcardH(g){
     ${g.original_title&&g.original_title!==g.title?`<div class="corig">${x(g.original_title)}</div>`:''}
     <div class="cm"><span class="di">${x(g.director_short||g.director||'')}</span><span class="yr2">${g.year||''}</span></div>
     <div class="cf">
-      ${starsH(g.my_rating)}
+      ${imdbBdg(g.imdb_rating)}${rtBdg(g.rt_rating)}
       ${g.duration?`<span class="runtime">${g.duration}′</span>`:''}
     </div>
-  </div>`;
-}
-
-function lcardH(g){
-  return `<div class="pi" style="width:44px;height:66px"><div class="ph"><div class="ph-i">🎬</div></div></div>
-  <div class="ci">
-    <div class="ct">T${pad(g.t)}</div>
-    <div class="ctit">${x(g.title)}${g.version?`<span class="cver">${x(g.version)}</span>`:''}</div>
-    <div class="cm"><span class="di">${x(g.director_short||g.director||'')} · ${g.year||''}</span></div>
-    <div class="lbdg">${g.on_plex?`<span class="badge bp">PLEX</span>`:''} ${resBdg(g.resolution)}</div>
   </div>`;
 }
 
@@ -783,15 +762,6 @@ function setP(pi,path){
     if(wm)pi.appendChild(wm);
     if(bm)pi.appendChild(bm);
   };
-}
-
-// ── VIEW ──
-function setV(v){
-  view=v;
-  document.getElementById('grid').className=v==='l'?'lv':'';
-  document.getElementById('vg').classList.toggle('on',v==='g');
-  document.getElementById('vl').classList.toggle('on',v==='l');
-  shown=0;document.getElementById('grid').innerHTML='';render();
 }
 
 // ── RATINGS ──
@@ -1028,7 +998,7 @@ async function markWatched(tNum, nowWatched){
   const wStyle=nowWatched?'background:rgba(82,183,136,.18);border-color:var(--green);color:var(--green)':'background:var(--surf);border-color:var(--bdr2);color:var(--t2)';
   ['watched-btn-'+tNum,'watched-btn-d-'+tNum].forEach(id=>{
     const b=document.getElementById(id);
-    if(b){b.textContent=nowWatched?'✓ Watched':'○ Mark as Watched';b.style.cssText=wStyle;b.onclick=()=>markWatched(tNum,!nowWatched);}
+    if(b){b.textContent=nowWatched?'✓ Watched':'○ Watched?';b.style.cssText=wStyle;b.onclick=()=>markWatched(tNum,!nowWatched);}
   });
 
   // Update watched header line in modal
@@ -1200,7 +1170,7 @@ async function openM(g){
   let watchedBtnH='';
   const wExtra=g.watched&&g.date_watched?' · '+g.date_watched:'';
   if(isOwner){
-    watchedBtnH='<button class="btn btn-watched" id="watched-btn-'+g.t+'" style="'+watchedBtnStyle+'" onclick="markWatched('+g.t+','+(g.watched?'false':'true')+')">'+(g.watched?'✓ Watched':'○ Watch')+'<span class="w-extra">'+wExtra+'</span></button>';
+    watchedBtnH='<button class="btn btn-watched" id="watched-btn-'+g.t+'" style="'+watchedBtnStyle+'" onclick="markWatched('+g.t+','+(g.watched?'false':'true')+')">'+(g.watched?'✓ Watched':'○ Watched?')+'<span class="w-extra">'+wExtra+'</span></button>';
   } else if(g.watched){
     watchedBtnH='<span class="btn btn-watched" style="opacity:.6;cursor:default;'+watchedBtnStyle+'">✓ Watched<span class="w-extra">'+wExtra+'</span></span>';
   }
