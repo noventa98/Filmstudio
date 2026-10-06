@@ -33,6 +33,7 @@ The browser never talks to the Plex server directly. At runtime the page reads o
 |---|---|
 | `index.html` | The encrypted, self-contained catalog (about 7 MB) |
 | `SECURITY.md`, `.well-known/security.txt` | How to report a security issue |
+| `CLAUDE.md` | Ground rules for Claude sessions working on this repository |
 
 The Excel master, the unencrypted template, the build script and the API caches stay local and are gitignored.
 
