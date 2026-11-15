@@ -11,9 +11,10 @@ As of September 2026 the catalog covers about 2,600 films and 3,400 editions (DV
 - **Cards.** One card per film with poster, year, director, a 4K / HD / SD badge, a Plex badge, the number of editions owned, and a marker when the disc owned is higher resolution than what Plex actually streams.
 - **Detail view.** Summary, cast, director, screenplay, cinematography and music; ratings from IMDb, Rotten Tomatoes, Metacritic and TMDB side by side; embedded trailer; a direct link that opens the film in Plex; watched status and personal rating.
 - **Editions.** Every copy owned, with audio languages, subtitles, publisher, publication year, extras, audio commentaries, aspect ratio, sound format and storage location.
-- **Sorting.** Shuffle (the default when the page opens), title, year, runtime, recently added, director, IMDb rating, Rotten Tomatoes, entry number.
-- **Filters that combine.** Search by title, director or actor; click any person to see everything with them; release year range; on Plex; watched or not watched; watchlist; resolution; storage location; genre; country; audio language; subtitle language.
+- **Sorting.** Shuffle (the default when the page opens), title, year, runtime, recently added, recently watched, director, IMDb rating, Rotten Tomatoes, entry number.
+- **Filters that combine.** Search by title, director or actor; click any person to see everything with them; release year range or a decade chip; on Plex; watched or not watched; two watchlists, shown together or only where they overlap; resolution, with several ticked at once (for example 4K and HD); storage location; genre; country; audio language; subtitle language.
 - **Cross-device state.** Watched status and ratings are synced from Plex through a GitHub Gist, so the phone and the desktop show the same picture.
+- **Film links.** Every film has its own address (`#T0123` after the site URL) that can be bookmarked or shared. On a phone the Back button closes the detail view or the trailer instead of leaving the site.
 - **Responsive layout** for phone and desktop.
 
 ## How it is built
